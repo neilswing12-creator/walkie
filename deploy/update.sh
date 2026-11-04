@@ -13,4 +13,4 @@ sudo -u walkie npx prisma migrate deploy
 sudo -u walkie npm run -s db:seed
 sudo -u walkie npm run -s build
 systemctl restart walkie
-sleep 3; curl -fs -o /dev/null -w "local app → HTTP %{http_code}\n" http://127.0.0.1:3000/
+sleep 3; curl -fs -o /dev/null -w "local app → HTTP %{http_code}\n" http://127.0.0.1:3210/

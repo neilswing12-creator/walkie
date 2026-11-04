@@ -10,7 +10,7 @@ DATA_DIR="/var/www/walkie-data"           # uploads + backups live outside the g
 REPO="${REPO:-https://github.com/neilswing12-creator/walkie.git}"
 BRANCH="${BRANCH:-main}"
 EMAIL="${1:-}"
-PORT=3000
+PORT=3210
 
 [ "$(id -u)" = 0 ] || { echo "Run as root (sudo)."; exit 1; }
 log() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }

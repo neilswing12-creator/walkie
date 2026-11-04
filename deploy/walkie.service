@@ -9,9 +9,9 @@ User=walkie
 Group=walkie
 WorkingDirectory=/var/www/walkie
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=3210
 Environment=HOSTNAME=127.0.0.1
-ExecStart=/usr/bin/npx next start -p 3000 -H 127.0.0.1
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 3210 -H 127.0.0.1
 Restart=always
 RestartSec=3
 # hardening
