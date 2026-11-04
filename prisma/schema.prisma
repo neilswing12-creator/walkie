@@ -1,0 +1,983 @@
+// Walkie.run data model.
+// Local dev uses SQLite (zero setup). For production run `npm run db:use-postgres`
+// which switches the provider to PostgreSQL, then set DATABASE_URL.
+// String "enum" columns are documented in src/lib/constants.ts (SQLite has no native enums).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Accounts ─────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String
+  username      String?   @unique
+  avatarUrl     String?
+  role          String    @default("USER") // USER | SUPPORT | MODERATOR | ADMIN
+  status        String    @default("ACTIVE") // ACTIVE | SUSPENDED | BANNED | DELETED
+  statusReason  String?
+  timezone      String    @default("UTC")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastActiveAt  DateTime?
+  referredById  String?
+  referralCode  String?   @unique
+  emailNormalized String? // alias-insensitive form for duplicate-account checks
+
+  profile        Profile?
+  sessions       Session[]
+  oauthAccounts  OAuthAccount[]
+  tokens         VerificationToken[]
+  activities     Activity[]
+  dailySummaries DailySummary[]
+  healthSyncs    HealthSync[]
+  missionProgress MissionProgress[]
+  pets           Pet[]
+  inventory      InventoryItem[]
+  shopLayout     ShopLayout?
+  wallet         Wallet?
+  ledger         LedgerEntry[]
+  dailyClaims    DailyRewardClaim[]
+  achievements   UserAchievement[]
+  streak         Streak?
+  sentRequests     Friendship[] @relation("requester")
+  receivedRequests Friendship[] @relation("addressee")
+  challenges     ChallengeParticipant[]
+  notifications  Notification[]
+  pushTokens     PushToken[]
+  subscriptions  Subscription[]
+  tickets        SupportTicket[]
+  auditLogs      AuditLog[]
+  shopVisitsMade     ShopVisit[] @relation("visitor")
+  shopVisitsReceived ShopVisit[] @relation("owner")
+  activitySessions ActivitySession[]
+  achievementProgress AchievementProgress[]
+  referralsMade    Referral[] @relation("referrer")
+  referralReceived Referral?  @relation("referee")
+  vipCredits       VipCredit[]
+  devices          DeviceRegistration[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([lastActiveAt])
+  @@index([emailNormalized])
+  savedLooks    SavedLook[]
+  lbScores      LeaderboardScore[]
+  lbResults     LeaderboardResult[]
+  lbDisq        LeaderboardDisqualification[]
+  lbDisputes    LeaderboardDispute[]
+  duelsSent     Duel[] @relation("DuelChallenger")
+  duelsReceived Duel[] @relation("DuelOpponent")
+  cheersSent    Cheer[] @relation("CheerFrom")
+  cheersReceived Cheer[] @relation("CheerTo")
+  paymentOrders PaymentOrder[]
+}
+
+model Profile {
+  userId               String  @id
+  user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                  String?
+  weightKg             Float?
+  heightCm             Float?
+  units                String  @default("metric") // metric | imperial
+  dailyStepGoal        Int     @default(6000)
+  dailyDistanceGoalM   Int     @default(3000)
+  dailyActiveMinGoal   Int     @default(30)
+  activePetId          String?
+  // Privacy — conservative defaults; precise routes are never public by default.
+  profileVisibility    String  @default("FRIENDS") // PUBLIC | FRIENDS | PRIVATE
+  activityVisibility   String  @default("FRIENDS") // PUBLIC | FRIENDS | PRIVATE
+  shareRoutes          Boolean @default(false)
+  leaderboardOptIn     Boolean @default(false)
+  allowFriendRequests  Boolean @default(true)
+  // Notification consent (all opt-in except in-app)
+  notifyDailyReminder  Boolean @default(false)
+  notifyMissions       Boolean @default(true)
+  notifyPets           Boolean @default(true)
+  notifyFriends        Boolean @default(true)
+  notifyEmail          Boolean @default(false)
+  notifyPush           Boolean @default(false)
+  reminderHour         Int     @default(18)
+  onboardedAt          DateTime?
+  // Onboarding personalisation (editable later in Profile)
+  preferredActivity    String? // walk | run | bike | mixed
+  fitnessGoals         Json? // ["habit","fitness",...]
+  activityLevel        String? // starting | occasional | regular | very
+  walkieLook           String    @default("classic") // classic | sporty | sunny — presentation only, never tied to gender
+  walkieFur            String    @default("classic")
+  publicName           String? // leaderboard display name (defaults to first name + initial)
+  country              String? // ISO-3166 alpha-2, user-chosen (never derived from GPS)
+  community            String? // user-chosen community/club name for local boards
+  showPhotoOnBoards    Boolean   @default(false) // false → their Walkie is shown instead of a photo
+  notifyCompetition    Boolean   @default(true)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model OAuthAccount {
+  id                String @id @default(cuid())
+  provider          String // google | apple
+  providerAccountId String
+  userId            String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // EMAIL_VERIFY | PASSWORD_RESET
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
+}
+
+// ───────────────────────── Fitness ─────────────────────────
+
+model Activity {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId       String // idempotency key generated on device
+  type           String // OUTDOOR_WALK | OUTDOOR_RUN | INDOOR_WALK | TREADMILL_RUN | FREE_WORKOUT
+  source         String // GPS | MANUAL | HEALTHKIT | HEALTH_CONNECT
+  startedAt      DateTime
+  endedAt        DateTime
+  durationSec    Int // moving time
+  elapsedSec     Int
+  distanceM      Float    @default(0)
+  elevationGainM Float?
+  avgPaceSecKm   Float?
+  maxSpeedMps    Float?
+  calories       Int      @default(0)
+  estimatedSteps Int?
+  splits         Json?
+  title          String?
+  avgSpeedMps    Float?
+  points         Int      @default(0)
+  records        Json? // personal records set by this activity, e.g. ["LONGEST_WALK","FASTEST_1K"]
+  rewardTxId     String? // ledger entry that paid this activity
+  sessionId      String?  @unique
+  shareId        String?  @unique
+  shareOptions   Json? // { route, name, details }
+  deletedAt      DateTime?
+  status         String   @default("COMPLETED") // COMPLETED | FLAGGED | DELETED
+  flagReason     String?
+  coinsAwarded   Int      @default(0)
+  xpAwarded      Int      @default(0)
+  note           String?
+  createdAt      DateTime @default(now()) // completion timestamp
+  route          ActivityRoute?
+
+  @@unique([userId, clientId])
+  @@index([userId, startedAt])
+  @@index([startedAt])
+}
+
+model ActivityRoute {
+  activityId String   @id
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  points     Json // [[lat, lng, tSec, altM|null], ...] — private, never sent to analytics
+  minLat     Float
+  minLng     Float
+  maxLat     Float
+  maxLng     Float
+}
+
+model DailySummary {
+  id            String @id @default(cuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          String // YYYY-MM-DD in the user's timezone
+  steps         Int    @default(0) // from health integrations only
+  stepsSource   String? // HEALTHKIT | HEALTH_CONNECT
+  walkDistanceM Float  @default(0)
+  runDistanceM  Float  @default(0)
+  bikeDistanceM Float  @default(0)
+  points        Int    @default(0)
+  activeMinutes Int    @default(0)
+  calories      Int    @default(0)
+  activities    Int    @default(0)
+  goalMet       Boolean @default(false)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+model HealthSync {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source       String // HEALTHKIT | HEALTH_CONNECT
+  lastSyncedAt DateTime @default(now())
+
+  @@unique([userId, source])
+}
+
+// ───────────────────────── Game ─────────────────────────
+
+model Wallet {
+  userId        String @id
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins         Int    @default(0)
+  lifetimeCoins Int    @default(0)
+  xp            Int    @default(0)
+  points        Int    @default(0)
+  lifetimePoints Int   @default(0)
+  level         Int    @default(1)
+  streakFreezes Int    @default(1)
+  updatedAt     DateTime @updatedAt
+}
+
+model LedgerEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins          Int      @default(0)
+  xp             Int      @default(0)
+  points         Int      @default(0)
+  reason         String // DAILY_REWARD | ACTIVITY | MISSION | PURCHASE | ACHIEVEMENT | CHALLENGE | AD_REWARD | ADMIN_ADJUST | REFUND | PET_UNLOCK
+  refType        String?
+  refId          String?
+  idempotencyKey String   @unique
+  meta           Json?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([reason, createdAt])
+}
+
+model DailyRewardClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String
+  streakDay Int
+  reward    Json
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model Streak {
+  userId         String  @id
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  current        Int     @default(0)
+  longest        Int     @default(0)
+  lastActiveDate String?
+  freezesUsed    Int     @default(0)
+}
+
+model Mission {
+  id           String  @id @default(cuid())
+  key          String  @unique
+  title        String
+  description  String
+  kind         String // STEPS | WALK_DISTANCE | RUN_DISTANCE | RUN_DURATION | ACTIVE_MINUTES | ACTIVITY_COUNT | FEED_PET | PLAY_PET | VISIT_SHOP
+  target       Int
+  period       String  @default("DAILY") // DAILY | WEEKLY
+  difficulty   String  @default("EASY") // EASY | MEDIUM | HARD
+  rewardCoins  Int     @default(20)
+  rewardXp     Int     @default(10)
+  rewardItemId String?
+  premium      Boolean @default(false)
+  enabled      Boolean @default(true)
+  sort         Int     @default(0)
+  createdAt    DateTime @default(now())
+  progress     MissionProgress[]
+}
+
+model MissionProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId   String
+  mission     Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  periodKey   String // 2026-11-04 or 2026-W45
+  progress    Int       @default(0)
+  completedAt DateTime?
+  claimedAt   DateTime?
+
+  @@unique([userId, missionId, periodKey])
+  @@index([missionId, periodKey])
+}
+
+model Achievement {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  title         String
+  description   String
+  category      String    @default("FITNESS") // WALKING | RUNNING | CYCLING | FITNESS | STREAKS | RECORDS | PETS | SHOP | SOCIAL | SEASONAL
+  rarity        String    @default("COMMON")
+  kind          String // progress type — see src/lib/achievements/kinds.ts
+  target        Int
+  rewardCoins   Int       @default(50)
+  rewardXp      Int       @default(25)
+  rewardItemKey String?
+  rewardItemQty Int       @default(1)
+  icon          String    @default("trophy")
+  art           Json? // { pose, prop, scene, hue } procedural badge art; imageUrl overrides
+  imageUrl      String?
+  startsAt      DateTime? // seasonal window
+  endsAt        DateTime?
+  hidden        Boolean   @default(false) // secret until unlocked
+  archived      Boolean   @default(false)
+  enabled       Boolean   @default(true)
+  sort          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  users         UserAchievement[]
+  progress      AchievementProgress[]
+
+  @@index([category, enabled])
+}
+
+model AchievementProgress {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  progress      Float       @default(0)
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([userId, achievementId])
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt    DateTime    @default(now())
+  seenAt        DateTime? // unlock animation shown
+  shareId       String?     @unique
+  rewardTxId    String?
+
+  @@unique([userId, achievementId])
+  @@index([achievementId])
+}
+
+// ───────────────────────── Pets ─────────────────────────
+
+model PetSpecies {
+  id           String  @id @default(cuid())
+  key          String  @unique // husky, corgi, ... (maps to an illustrated character)
+  name         String
+  defaultName  String
+  description  String
+  personality  String
+  rarity       String // COMMON | UNCOMMON | RARE | EPIC | LEGENDARY | MYTHICAL
+  unlockType   String // DEFAULT | LEVEL | TOTAL_DISTANCE | TOTAL_STEPS | STREAK | PURCHASE | MISSIONS | ACHIEVEMENT | EVENT
+  unlockValue  Int     @default(0)
+  priceCoins   Int?
+  premium      Boolean @default(false)
+  enabled      Boolean @default(true)
+  imageUrl     String?
+  xpPerLevel   Int     @default(100)
+  // XP thresholds for growth stages
+  youngAtLevel Int     @default(5)
+  adultAtLevel Int     @default(12)
+  specialAtLevel Int   @default(25)
+  sort         Int     @default(0)
+  createdAt    DateTime @default(now())
+  pets         Pet[]
+}
+
+model Pet {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  speciesId    String
+  species      PetSpecies @relation(fields: [speciesId], references: [id])
+  nickname     String
+  level        Int       @default(1)
+  xp           Int       @default(0)
+  happiness    Int       @default(70)
+  energy       Int       @default(80)
+  stage        String    @default("BABY") // BABY | YOUNG | ADULT | SPECIAL
+  acquiredVia  String
+  acquiredAt   DateTime  @default(now())
+  lastFedAt    DateTime?
+  lastPlayedAt DateTime?
+  lastPettedAt DateTime?
+  accessories  EquippedAccessory[]
+
+  @@unique([userId, speciesId])
+  @@index([userId])
+}
+
+/** A saved Walkie outfit ("look"), max 12 per user. items = { SLOT: itemKey }. */
+model SavedLook {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  items     Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EquippedAccessory {
+  id     String @id @default(cuid())
+  petId  String
+  pet    Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+  slot   String // HEAD | FACE | NECK | BODY | BACK | FEET
+
+  @@unique([petId, slot])
+}
+
+// ───────────────────────── Shop / economy ─────────────────────────
+
+model Item {
+  id            String    @id @default(cuid())
+  key           String    @unique
+  name          String
+  description   String
+  category      String // FOOD | TOY | ACCESSORY | DECORATION | FURNITURE | BUILDING | FLOOR | WALL | ENVIRONMENT | BOOST
+  rarity        String    @default("COMMON")
+  priceCoins    Int
+  premium       Boolean   @default(false)
+  seasonal      Boolean   @default(false)
+  availableFrom DateTime?
+  availableTo   DateTime?
+  enabled       Boolean   @default(true)
+  model         String? // procedural 3D model key for placeables
+  color         String?
+  footprintW    Int       @default(1)
+  footprintD    Int       @default(1)
+  slot          String? // accessory slot
+  effect        Json? // { energy, happiness, xp }
+  imageUrl      String?
+  sort          Int       @default(0)
+  createdAt     DateTime  @default(now())
+  inventory     InventoryItem[]
+  placements    ShopPlacement[]
+  equipped      EquippedAccessory[]
+
+  @@index([category, enabled])
+}
+
+model InventoryItem {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     Item   @relation(fields: [itemId], references: [id])
+  quantity Int    @default(0)
+
+  @@unique([userId, itemId])
+}
+
+model ShopLayout {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String   @default("My Pet Shop")
+  environment String   @default("starter")
+  expansion   Int      @default(0) // grid size = 8 + expansion * 2
+  floorKey    String   @default("floor_grass")
+  wallKey     String   @default("wall_picket")
+  popularity  Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  placements  ShopPlacement[]
+}
+
+model ShopPlacement {
+  id       String     @id @default(cuid())
+  layoutId String
+  layout   ShopLayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     Item       @relation(fields: [itemId], references: [id])
+  x        Int
+  z        Int
+  rotation Int        @default(0) // 0..3 quarter turns
+  placedAt DateTime   @default(now())
+
+  @@index([layoutId])
+}
+
+model ShopVisit {
+  id        String   @id @default(cuid())
+  visitorId String
+  visitor   User     @relation("visitor", fields: [visitorId], references: [id], onDelete: Cascade)
+  ownerId   String
+  owner     User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  date      String
+  createdAt DateTime @default(now())
+
+  @@unique([visitorId, ownerId, date])
+}
+
+// ───────────────────────── Social ─────────────────────────
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  requester   User     @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String
+  addressee   User     @relation("addressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING") // PENDING | ACCEPTED | DECLINED | BLOCKED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId, status])
+}
+
+model Challenge {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  title       String
+  description String
+  kind        String // STEPS | WALK_DISTANCE | RUN_DISTANCE | ACTIVE_MINUTES | ACTIVITY_COUNT
+  target      Int
+  period      String   @default("WEEKLY") // DAILY | WEEKLY | MONTHLY | CUSTOM
+  community   Boolean  @default(false)
+  startsAt    DateTime
+  endsAt      DateTime
+  rewardCoins Int      @default(100)
+  rewardXp    Int      @default(50)
+  premium     Boolean  @default(false)
+  enabled     Boolean  @default(true)
+  maxParticipants Int?
+  teamMode    Boolean  @default(false) // two auto-balanced teams compete on combined progress
+  createdAt   DateTime @default(now())
+  participants ChallengeParticipant[]
+}
+
+model ChallengeParticipant {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress    Int       @default(0)
+  joinedAt    DateTime  @default(now())
+  completedAt DateTime?
+  claimedAt   DateTime?
+  team        String? // PUPS | WOLVES when the challenge is in team mode (assigned server-side)
+
+  @@unique([challengeId, userId])
+}
+
+// ───────────────────────── Notifications ─────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // REWARD | MISSION | PET | FRIEND | CHALLENGE | SUBSCRIPTION | SYSTEM | ACHIEVEMENT
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String // ios | android | web
+  createdAt DateTime @default(now())
+}
+
+// ───────────────────────── Monetisation ─────────────────────────
+
+model SubscriptionPlan {
+  id                    String  @id @default(cuid())
+  key                   String  @unique
+  name                  String
+  description           String
+  priceCents            Int
+  currency              String  @default("usd")
+  interval              String  @default("month") // month | year
+  trialDays             Int     @default(0)
+  stripePriceId         String?
+  revenuecatEntitlement String? @default("plus")
+  paymongoAmount        Int? // PHP centavos for a PayMongo Plus pass (GCash / Maya / cards). null = not sold via PayMongo
+  features              Json
+  enabled               Boolean @default(true)
+  sort                  Int     @default(0)
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  userId                 String
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider               String // STRIPE | REVENUECAT
+  providerCustomerId     String?
+  providerSubscriptionId String    @unique
+  planKey                String
+  status                 String // TRIALING | ACTIVE | PAST_DUE | CANCELED | EXPIRED | REFUNDED
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  providerEventAt        DateTime? // timestamp of the newest provider event applied (older, out-of-order events are ignored)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model PaymentEvent {
+  id          String   @id @default(cuid())
+  provider    String
+  eventId     String   @unique
+  type        String
+  userId      String?
+  amountCents Int?
+  summary     Json?
+  processedAt DateTime @default(now())
+
+  @@index([provider, processedAt])
+}
+
+model AdPlacement {
+  id                 String  @id @default(cuid())
+  key                String  @unique
+  name               String
+  screen             String // must be in ALLOWED_AD_SCREENS (never activity/GPS screens)
+  format             String // BANNER | REWARDED | INTERSTITIAL
+  enabled            Boolean @default(false)
+  frequencyCapPerDay Int     @default(3)
+  rewardCoins        Int     @default(0)
+  hideForPlus        Boolean @default(true)
+}
+
+model AdEvent {
+  id            String   @id @default(cuid())
+  placementKey  String
+  userId        String?
+  type          String // IMPRESSION | CLICK | REWARD
+  revenueMicros Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@index([placementKey, createdAt])
+  @@index([userId, placementKey, createdAt])
+}
+
+// ───────────────────────── Platform ─────────────────────────
+
+model FeatureFlag {
+  id             String  @id @default(cuid())
+  key            String  @unique
+  description    String
+  enabled        Boolean @default(false)
+  rolloutPercent Int     @default(100)
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  props     Json?
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email     String
+  subject   String
+  message   String
+  status    String   @default("OPEN") // OPEN | PENDING | RESOLVED
+  adminNote String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actor      User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  platform  String   @default("any") // ios | android | any
+  source    String?
+  createdAt DateTime @default(now())
+}
+
+// ───────────────────────── Multi-sport ─────────────────────────
+
+/** Admin-editable activity catalogue: names, icons, colors, enablement, tracking features and reward rate. */
+model ActivityTypeConfig {
+  key         String  @id // matches ACTIVITY_TYPES
+  name        String
+  family      String // walk | run | bike | other
+  icon        String
+  color       String
+  description String
+  enabled     Boolean @default(true)
+  gps         Boolean @default(true)
+  rewardRate  Float // points per active (moving) minute
+  met         Float
+  sort        Int     @default(0)
+}
+
+/** Server-side lifecycle of a live activity: authoritative start time & paused time, one-shot finish. */
+model ActivitySession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  status     String    @default("ACTIVE") // ACTIVE | PAUSED | FINISHED | ABANDONED
+  startedAt  DateTime  @default(now())
+  pausedAt   DateTime?
+  pausedMs   Int       @default(0)
+  goal       Json?
+  finishedAt DateTime?
+  activityId String?
+
+  @@index([userId, status])
+}
+
+// ───────────────────────── Referrals & VIP trials ─────────────────────────
+
+model Referral {
+  id          String    @id @default(cuid())
+  referrerId  String
+  referrer    User      @relation("referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId   String    @unique // a person can only ever be referred once
+  referee     User      @relation("referee", fields: [refereeId], references: [id], onDelete: Cascade)
+  code        String
+  status      String    @default("PENDING") // PENDING | REGISTERED | VERIFICATION_REQUIRED | QUALIFIED | REWARD_GRANTED | REJECTED | SUSPICIOUS | UNDER_REVIEW
+  riskScore   Int       @default(0)
+  riskReasons Json? // admin-only; never shown to users
+  history     Json? // audit trail of automatic and manual decisions
+  appealText  String?
+  appealAt    DateTime?
+  qualifiedAt DateTime?
+  rewardedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  credits     VipCredit[]
+
+  @@index([referrerId, status])
+  @@index([status, createdAt])
+}
+
+/** VIP trial credit ledger. Credits stack end-to-end; entitlement = any ACTIVE credit covering "now". */
+model VipCredit {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source         String // REFERRAL_REFERRER | REFERRAL_WELCOME | ADMIN | PROMO
+  referralId     String?
+  referral       Referral? @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  days           Int
+  status         String    @default("ACTIVE") // ACTIVE | REVOKED
+  startsAt       DateTime
+  endsAt         DateTime
+  idempotencyKey String    @unique // transaction id — one credit per (source, referral)
+  createdAt      DateTime  @default(now())
+
+  @@index([userId, status, endsAt])
+}
+
+/** Server-issued install identifiers (HMAC-signed, so arbitrary client values are rejected). */
+model DeviceRegistration {
+  id          String   @id @default(cuid())
+  installHash String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform    String   @default("web")
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([installHash, userId])
+  @@index([installHash])
+}
+
+/** Short-lived security signals (hashed IPs) for abuse detection. Purged after the retention period. */
+model RiskSignal {
+  id        String   @id @default(cuid())
+  userId    String?
+  kind      String // SIGNUP | REFERRAL | VERIFY | LOGIN
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, kind, createdAt])
+  @@index([createdAt])
+}
+
+/* ── Leaderboards ─────────────────────────────────────────────── */
+/** Materialised, server-computed scores. period: D:YYYY-MM-DD | W:YYYY-MM-DD (week start) | M:YYYY-MM | A. board: overall|walk|run|bike|steps */
+model LeaderboardScore {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period    String
+  board     String
+  value     Float    @default(0)
+  flags     Json? // review hints for admins (never shown to other users)
+  prevRank  Int? // global rank at the start of the day (rank-change arrows)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, period, board])
+  @@index([period, board, value])
+}
+
+/** Settled results + rewards for finished periods (one row per user/period/board — rewards can't repeat). */
+model LeaderboardResult {
+  id          String   @id @default(cuid())
+  period      String
+  board       String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rank        Int?
+  score       Float
+  tier        String?
+  rewardCoins Int      @default(0)
+  rewardItem  String?
+  createdAt   DateTime @default(now())
+
+  @@unique([period, board, userId])
+  @@index([period, board, rank])
+}
+
+model LeaderboardDisqualification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  period    String? // null = all public boards until lifted
+  reason    String
+  adminId   String
+  createdAt DateTime  @default(now())
+  liftedAt  DateTime?
+  disputes  LeaderboardDispute[]
+
+  @@index([userId])
+}
+
+model LeaderboardDispute {
+  id                String    @id @default(cuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  disqualificationId String?
+  disqualification  LeaderboardDisqualification? @relation(fields: [disqualificationId], references: [id], onDelete: SetNull)
+  period            String?
+  text              String
+  status            String    @default("OPEN") // OPEN | ACCEPTED | REJECTED
+  response          String?
+  resolvedBy        String?
+  createdAt         DateTime  @default(now())
+  resolvedAt        DateTime?
+}
+
+/** Friendly 1:1 competitions between friends. */
+model Duel {
+  id           String    @id @default(cuid())
+  challengerId String
+  challenger   User      @relation("DuelChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponentId   String
+  opponent     User      @relation("DuelOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+  metric       String // STEPS | WALK | RUN | BIKE | POINTS
+  days         Int
+  status       String    @default("PENDING") // PENDING | ACTIVE | DECLINED | DONE | CANCELLED
+  startsAt     DateTime?
+  endsAt       DateTime?
+  winnerId     String?
+  createdAt    DateTime  @default(now())
+
+  @@index([challengerId])
+  @@index([opponentId])
+}
+
+model Cheer {
+  id        String   @id @default(cuid())
+  fromId    String
+  from      User     @relation("CheerFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  toId      String
+  to        User     @relation("CheerTo", fields: [toId], references: [id], onDelete: Cascade)
+  day       String
+  createdAt DateTime @default(now())
+
+  @@unique([fromId, toId, day])
+}
+
+/** Server-created order for one-time provider payments (PayMongo). The webhook must match amount, currency and order id. */
+model PaymentOrder {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider    String // PAYMONGO
+  planKey     String
+  amount      Int // minor units (centavos)
+  currency    String
+  days        Int
+  status      String    @default("PENDING") // PENDING | PAID | FAILED | EXPIRED | REFUNDED
+  providerRef String?   @unique // checkout session id
+  paymentId   String?   @unique
+  createdAt   DateTime  @default(now())
+  paidAt      DateTime?
+
+  @@index([userId, status])
+}
+
+/** Security monitoring (failed logins, forbidden admin attempts, forged webhooks…). Never stores passwords, tokens or raw IPs. */
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  kind      String
+  userId    String? // plain id (kept if the account is deleted, for incident timelines)
+  ipHash    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([kind, createdAt])
+  @@index([createdAt])
+}

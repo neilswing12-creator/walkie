@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Walkie app icon master (1024×1024, full-bleed — iOS applies its own rounded mask). Source of truth for store icons. -->
+  <defs>
+    <radialGradient id="bg" cx="34%" cy="24%" r="92%">
+      <stop offset="0" stop-color="#B6D1F8"/>
+      <stop offset=".38" stop-color="#7DA0E2"/>
+      <stop offset=".72" stop-color="#5675C4"/>
+      <stop offset="1" stop-color="#2F4789"/>
+    </radialGradient>
+    <radialGradient id="bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset=".55" stop-color="#DDE9FF" stop-opacity="0"/>
+      <stop offset=".8" stop-color="#DDE9FF" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#DDE9FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fur" x1="0" y1="30" x2="0" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#AEB8C8"/>
+      <stop offset=".5" stop-color="#7B879C"/>
+      <stop offset="1" stop-color="#4C586D"/>
+    </linearGradient>
+    <linearGradient id="furEar" x1="0" y1="24" x2="0" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B9C3D1"/>
+      <stop offset="1" stop-color="#76829A"/>
+    </linearGradient>
+    <linearGradient id="earIn" x1="0" y1="36" x2="0" y2="66" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FBD3DF"/>
+      <stop offset="1" stop-color="#E592AB"/>
+    </linearGradient>
+    <radialGradient id="mask" cx="100" cy="88" r="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset=".7" stop-color="#F3F6FA"/>
+      <stop offset="1" stop-color="#D7DEE8"/>
+    </radialGradient>
+    <radialGradient id="iris" cx="50%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#E4F1FF"/>
+      <stop offset=".42" stop-color="#7FB3F2"/>
+      <stop offset="1" stop-color="#2A57AA"/>
+    </radialGradient>
+    <radialGradient id="pupil" cx="45%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#3B4658"/>
+      <stop offset="1" stop-color="#141A24"/>
+    </radialGradient>
+    <linearGradient id="nose" x1="0" y1="99" x2="0" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#465266"/>
+      <stop offset="1" stop-color="#1A212C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="122" x2="0" y2="166" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFE59A"/>
+      <stop offset=".5" stop-color="#F4BE45"/>
+      <stop offset="1" stop-color="#C98A1E"/>
+    </linearGradient>
+    <linearGradient id="goldBand" x1="0" y1="122" x2="0" y2="146" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7C85A"/>
+      <stop offset="1" stop-color="#B57A16"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx="38%" cy="22%" r="60%">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".55"/>
+      <stop offset=".6" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".9"/>
+      <stop offset=".45" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="headClip"><ellipse cx="100" cy="90" rx="54" ry="46"/></clipPath>
+    <filter id="drop" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="3.2" stdDeviation="4.2" flood-color="#14244F" flood-opacity=".45"/>
+    </filter>
+    <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
+    <filter id="blurBig" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter>
+    <symbol id="spark" viewBox="-10 -10 20 20"><path d="M0-10 C1 -2 2 -1 10 0 C2 1 1 2 0 10 C-1 2 -2 1 -10 0 C-2 -1 -1 -2 0 -10Z" fill="#fff"/></symbol>
+  </defs>
+
+  <g id="background">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <ellipse cx="330" cy="230" rx="420" ry="330" fill="url(#bloom)" filter="url(#blurBig)"/>
+    <circle cx="512" cy="540" r="470" fill="url(#halo)"/>
+    <use href="#spark" x="790" y="170" width="70" height="70" opacity=".85"/>
+    <use href="#spark" x="880" y="300" width="34" height="34" opacity=".6"/>
+    <use href="#spark" x="150" y="760" width="40" height="40" opacity=".45"/>
+    <ellipse cx="512" cy="940" rx="330" ry="60" fill="#1B2D63" opacity=".25" filter="url(#blurBig)"/>
+  </g>
+
+  <g id="walkie" transform="translate(-28 -46) scale(5.4)">
+    <g filter="url(#drop)">
+      <!-- ears -->
+      <path d="M54 76 C52 56 58 38 66 28 C76 36 88 48 94 60 Z" fill="url(#furEar)" stroke="url(#furEar)" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M146 76 C148 56 142 38 134 28 C124 36 112 48 106 60 Z" fill="url(#furEar)" stroke="url(#furEar)" stroke-width="6" stroke-linejoin="round"/>
+      <!-- head -->
+      <ellipse cx="100" cy="90" rx="54" ry="46" fill="url(#fur)"/>
+      <!-- gold bandana (drawn under the chin) -->
+      <path d="M64 124 Q100 141 136 124 L137 133 Q100 150 63 133 Z" fill="url(#goldBand)"/>
+      <path d="M69 130 Q100 146 131 130 L100 160 Z" fill="url(#gold)"/>
+    </g>
+    <path d="M64 66 C63 54 66 44 70 38 C76 44 82 52 85 60 Z" fill="url(#earIn)"/>
+    <path d="M136 66 C137 54 134 44 130 38 C124 44 118 52 115 60 Z" fill="url(#earIn)"/>
+    <!-- head-top tuft + fur sheen + rim light -->
+    <path d="M92 46 l3 -6 l3 5 l3 -6 l3 6" stroke="#B5BFCD" stroke-width="5" fill="#B5BFCD" stroke-linejoin="round"/>
+    <ellipse cx="100" cy="90" rx="54" ry="46" fill="url(#gloss)"/>
+    <!-- husky mask: eye goggles + centre blaze + white lower face, clipped to the head -->
+    <g clip-path="url(#headClip)" fill="url(#mask)">
+      <path d="M100 58 C104 70 108 82 112 96 L112 108 L88 108 L88 96 C92 82 96 70 100 58 Z"/>
+      <ellipse cx="79" cy="92" rx="17" ry="16"/>
+      <ellipse cx="121" cy="92" rx="17" ry="16"/>
+      <path d="M44 112 C52 104 64 102 74 106 C84 110 92 106 100 106 C108 106 116 110 126 106 C136 102 148 104 156 112 L156 140 L44 140 Z"/>
+    </g>
+    <ellipse cx="78" cy="68" rx="5.6" ry="3.6" fill="#F6F8FB"/>
+    <ellipse cx="122" cy="68" rx="5.6" ry="3.6" fill="#F6F8FB"/>
+    <path d="M48 104 l-8 6 l10 2 l-6 7 l12 -2" fill="#F1F4F8"/>
+    <path d="M152 104 l8 6 l-10 2 l6 7 l-12 -2" fill="#F1F4F8"/>
+    <!-- eyes -->
+    <g>
+      <ellipse cx="79" cy="95.5" rx="12.5" ry="4" fill="#9AA8BD" opacity=".35" filter="url(#soft)"/>
+      <ellipse cx="121" cy="95.5" rx="12.5" ry="4" fill="#9AA8BD" opacity=".35" filter="url(#soft)"/>
+      <circle cx="79" cy="91.5" r="11.6" fill="url(#iris)"/>
+      <circle cx="121" cy="91.5" r="11.6" fill="url(#iris)"/>
+      <circle cx="79" cy="91.5" r="11.6" fill="none" stroke="#244C96" stroke-opacity=".55" stroke-width="1.1"/>
+      <circle cx="121" cy="91.5" r="11.6" fill="none" stroke="#244C96" stroke-opacity=".55" stroke-width="1.1"/>
+      <circle cx="79.5" cy="92.5" r="6.6" fill="url(#pupil)"/>
+      <circle cx="121.5" cy="92.5" r="6.6" fill="url(#pupil)"/>
+      <circle cx="83.4" cy="87.6" r="3.6" fill="#fff"/>
+      <circle cx="125.4" cy="87.6" r="3.6" fill="#fff"/>
+      <circle cx="75.6" cy="96.4" r="1.6" fill="#fff" opacity=".85"/>
+      <circle cx="117.6" cy="96.4" r="1.6" fill="#fff" opacity=".85"/>
+    </g>
+    <!-- blush -->
+    <ellipse cx="65" cy="110" rx="8.5" ry="5.2" fill="#F6AFC4" opacity=".75" filter="url(#soft)"/>
+    <ellipse cx="135" cy="110" rx="8.5" ry="5.2" fill="#F6AFC4" opacity=".75" filter="url(#soft)"/>
+    <!-- muzzle, nose, smile -->
+    <ellipse cx="100" cy="112.5" rx="18.5" ry="13" fill="#FFFFFF"/>
+    <ellipse cx="100" cy="117" rx="16" ry="8" fill="#E4E9F0" opacity=".55"/>
+    <path d="M92.5 103 C92.5 99.5 107.5 99.5 107.5 103 C107.5 107 103 110.5 100 110.5 C97 110.5 92.5 107 92.5 103 Z" fill="url(#nose)"/>
+    <ellipse cx="96.8" cy="102.4" rx="2.6" ry="1.3" fill="#fff" opacity=".75"/>
+    <path d="M91 113.5 Q95.5 119 100 114 Q104.5 119 109 113.5" stroke="#26303C" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- bandana details -->
+    <g fill="#FFF8E1" opacity=".9"><circle cx="92" cy="142" r="1.9"/><circle cx="107" cy="146" r="1.9"/><circle cx="100" cy="137" r="1.9"/><circle cx="100" cy="155" r="1.9"/></g>
+    <path d="M70 129 Q100 143 130 129" stroke="#FFF2C4" stroke-width="1.3" stroke-dasharray="2.4 2.4" fill="none" opacity=".8"/>
+    <path d="M74 133 Q86 140 96 141" stroke="#FFF7DA" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/>
+  </g>
+</svg>
