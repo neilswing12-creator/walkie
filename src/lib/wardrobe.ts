@@ -6,7 +6,8 @@ export const SLOTS = ["HEAD", "FACE", "NECK", "BODY", "BACK", "FEET"] as const;
 export type Slot = (typeof SLOTS)[number];
 export const SLOT_LABEL: Record<Slot, string> = { HEAD: "Hat", FACE: "Glasses", NECK: "Neck", BODY: "Top", BACK: "Back", FEET: "Shoes" };
 /** Non-husky pets have different bodies; they can wear head/face/neck/back items only. */
-export const PET_SLOTS: Slot[] = ["HEAD", "FACE", "NECK", "BACK"];
+/** Slots every species can wear — all of them, since every pet now stands on the shared Biped rig. */
+export const PET_SLOTS: Slot[] = ["HEAD", "FACE", "NECK", "BODY", "BACK", "FEET"];
 
 export type WardrobeGroup = "HAT" | "CAP" | "GLASSES" | "BANDANA" | "NECK" | "HOODIE" | "SHIRT" | "JACKET" | "COSTUME" | "BACK" | "SHOES";
 export type WardrobeDef = { key: string; name: string; description: string; slot: Slot; group: WardrobeGroup; art: string; rarity: string; priceCoins: number; color: string; premium?: boolean; seasonal?: boolean; fitness?: boolean; set?: string };

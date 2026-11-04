@@ -981,3 +981,13 @@ model SecurityEvent {
   @@index([kind, createdAt])
   @@index([createdAt])
 }
+
+/// Integration keys set from the admin panel (OWNER only). Values are AES-256-GCM encrypted with CONFIG_ENCRYPTION_KEY
+/// (which never lives in the database) and are never returned by any API — only whether each key is set.
+model IntegrationSecret {
+  key         String   @id
+  value       String // "v1:<iv>:<tag>:<ciphertext>" (base64url)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}

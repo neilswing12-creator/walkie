@@ -146,7 +146,7 @@ export function WardrobeClient() {
       {/* tabs */}
       <nav className="no-scrollbar sticky top-0 z-[5] flex gap-1 overflow-x-auto border-b border-walkie-gray/70 bg-walkie-light/95 px-3 pt-3 backdrop-blur" aria-label="Wardrobe categories">
         {[{ key: "ME", label: "My Walkie" }, ...WARDROBE_TABS].map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`shrink-0 border-b-[3px] px-3 pb-2 text-[13px] font-bold transition ${tab === t.key ? "border-walkie-blue text-walkie-ink" : "border-transparent text-walkie-muted"}`}>{t.label}</button>
+          <button key={t.key} onClick={() => setTab(t.key)} aria-pressed={tab === t.key} className={`shrink-0 whitespace-nowrap border-b-[3px] px-3 pb-2 text-[13px] font-bold transition ${tab === t.key ? "border-walkie-blue text-walkie-ink" : "border-transparent text-walkie-muted"}`}>{t.label}</button>
         ))}
       </nav>
 

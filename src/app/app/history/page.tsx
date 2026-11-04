@@ -51,9 +51,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
       </div>
       <form className="mt-3 flex items-end gap-2" action="/app/history">
         {family && <input type="hidden" name="family" value={family} />}
-        <label className="flex-1"><span className="label">From</span><input type="date" name="from" defaultValue={from} className="input min-h-[42px]" /></label>
-        <label className="flex-1"><span className="label">To</span><input type="date" name="to" defaultValue={to} className="input min-h-[42px]" /></label>
-        <button className="btn-soft min-h-[42px]">Filter</button>
+        <label className="min-w-0 flex-1"><span className="label">From</span><input type="date" name="from" defaultValue={from} className="input min-h-[42px] w-full min-w-0" /></label>
+        <label className="min-w-0 flex-1"><span className="label">To</span><input type="date" name="to" defaultValue={to} className="input min-h-[42px] w-full min-w-0" /></label>
+        <button className="btn-soft min-h-[42px] shrink-0 px-4">Filter</button>
       </form>
       {items.length === 0 ? <div className="card mt-4"><EmptyState title={family || from ? "Nothing matches" : "No activities yet"} body={family || from ? "Try another filter." : "Your walks, runs and rides will appear here."} mood="greet" action={<Link href="/app/activity/track" className="btn-primary">Start an adventure</Link>} /></div> : (
         <div className="card mt-4 divide-y divide-walkie-light">

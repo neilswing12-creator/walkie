@@ -8,6 +8,7 @@ import { ActivityPicker } from "./ActivityPicker";
 const tabs = [
   { href: "/app", label: "Home", icon: "home" },
   { href: "/app/explore", label: "Explore", icon: "compass" },
+  { href: "/app/leaderboard", label: "Ranks", icon: "trophy" },
   null,
   { href: "/app/shop", label: "Shop", icon: "store" },
   { href: "/app/insights", label: "Insights", icon: "chart" },
@@ -21,7 +22,7 @@ export function BottomNav() {
   return (
     <>
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-walkie-gray/60 bg-white/90 pb-[var(--safe-bottom)] backdrop-blur-xl" aria-label="Main">
-        <ul className="mx-auto grid max-w-lg grid-cols-6 items-end px-1 pt-1.5">
+        <ul className="mx-auto grid max-w-lg grid-cols-7 items-end px-1 pt-1.5">
           {tabs.map((t, i) =>
             t === null ? (
               <li key="start" className="flex justify-center">

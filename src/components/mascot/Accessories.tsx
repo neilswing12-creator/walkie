@@ -1,11 +1,13 @@
 /**
  * Walkie wardrobe art — every wearable, drawn in the shared 200×200 character space and split into render layers so
  * clothes sit *on* Walkie (sleeves move with the legs, hats tilt with the head, capes hang behind the body).
- * Landmarks: head ellipse c(100,90) r(54,46) · eyes (79,92)/(121,92) · neck ≈ y126–136 · torso y119–176 · front legs x80/105 y146–184.
+ * Landmarks: head ellipse c(100,90) r(54,46) · eyes (79,92)/(121,92) · neck ≈ y126–136 · torso y119–176 · limbs x80/105.
+ * Characters stand on the shared Biped rig (Biped.tsx): `frontPaw` art is drawn once per limb — FEET items on the legs
+ * (feet on the ground), BODY items' sleeves on the arms. Torso/neck/front art is authored in this space and squeezed.
  * Shading uses the shared, colour-independent gradients in WalkieDefs (fabric sheen, gloss, gold, glass).
  */
 import type { ReactNode } from "react";
-import { artOf } from "@/lib/wardrobe";
+import { artOf, slotOf, type Slot } from "@/lib/wardrobe";
 
 export type AccessoryProp = { key: string; color?: string | null };
 export type Layer = "behind" | "torso" | "backPaw" | "frontPaw" | "neck" | "front" | "face" | "head";
@@ -388,9 +390,9 @@ const ART: Record<string, Art> = {
 
 const resolve = (items: AccessoryProp[]) => items.map((i) => ({ art: ART[artOf(i.key)], c: i.color ?? "#6B8FD6", key: i.key })).filter((x) => x.art);
 
-/** Renders one layer of every worn item. `x` = front-leg x (frontPaw) or back-paw centre (backPaw). */
-export function WearLayer({ items, layer, x = 0 }: { items: AccessoryProp[]; layer: Layer; x?: number }) {
-  const out = resolve(items).map(({ art, c, key }) => {
+/** Renders one layer of every worn item. `x` = limb x (frontPaw) or back-paw centre (backPaw); `only` limits to one slot. */
+export function WearLayer({ items, layer, x = 0, only }: { items: AccessoryProp[]; layer: Layer; x?: number; only?: Slot }) {
+  const out = resolve(only ? items.filter((i) => slotOf(i.key) === only) : items).map(({ art, c, key }) => {
     if (layer === "frontPaw") return art.frontPaw ? <g key={key}>{art.frontPaw(x, c)}</g> : null;
     if (layer === "backPaw") return art.backPaw ? <g key={key}>{art.backPaw(x, c)}</g> : null;
     const f = art[layer]; return f ? <g key={key}>{f(c)}</g> : null;

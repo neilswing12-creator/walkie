@@ -111,3 +111,22 @@ If a credential is ever exposed:
    - Restore the latest clean `pg_dump`.
    - Rotate **all** secrets; revoke all sessions (`DELETE FROM "Session";`).
 7. **Backup recovery:** `pg_restore -d walkie /var/www/walkie-data/backups/walkie-N.dump` (N = weekday). Test this monthly.
+
+
+## Admin-managed integration keys
+Owners can set payment, email, sign-in, maps, push, analytics and ads keys in Admin → Settings.
+
+**Controls**
+- OWNER role only (admins see status, not values) and password re-entry on every save.
+- Rate-limited: 12 saves per 10 minutes.
+- Allow-listed keys only. Infrastructure secrets are never editable from the web.
+- Format checks on every key.
+- Encrypted at rest with AES-256-GCM. The key name is bound as authenticated data, so a row copied onto another key fails to decrypt. The encryption key lives only in the server environment, so a database dump alone reveals nothing.
+- Write-only: no API returns a saved secret, only whether it's set and where it comes from.
+- Audited by key name, never by value, in the audit log and security events.
+
+**Tests:** 13 checks in `scripts/e2e-security.mjs` (section "Integration keys").
+
+**Status:** PASS, against a production build.
+
+**Residual risk:** anyone with both shell access to the server and the database can decrypt these keys, the same as with the `.env` file. Rotate keys at the provider if the server is compromised.

@@ -260,6 +260,33 @@ async function main() {
   await setMaps({ web: [], ios: [], android: [] });
   ok("maps can be disabled entirely", (await mc(A.c, "web")).providers.length === 0 && (await mc(A.c, "ios")).providers.length === 0);
   await setMaps({ web: ["open"], ios: ["open"], android: ["open"], googleNativeSdk: true });
+  console.log("\nIntegration keys (admin panel)");
+  const IK = "/api/admin/integrations";
+  const SECRET = `gcs_e2e_${randomBytes(9).toString("hex")}`;
+  ok("normal users can't see or change integration keys", (await B.c(IK)).status === 403 && (await B.c(IK, { method: "PUT", body: { changes: { GOOGLE_CLIENT_ID: "x" } } })).status === 403);
+  await db.user.update({ where: { id: A.id }, data: { role: "ADMIN" } });
+  const aView = await A.c(IK);
+  ok("admins see status but can't edit (owner only)", aView.status === 200 && aView.json.data.canEdit === false && (await A.c(IK, { method: "PUT", body: { confirmPassword: A.password, changes: { GOOGLE_CLIENT_ID: "x.apps.googleusercontent.com" } } })).status === 403);
+  await db.user.update({ where: { id: A.id }, data: { role: "USER" } });
+  const put = (changes, confirmPassword = process.env.ADMIN_PASSWORD) => owner(IK, { method: "PUT", body: { changes, ...(confirmPassword === "<none>" ? {} : { confirmPassword }) } });
+  ok("owner must re-enter their password", (await put({ GOOGLE_CLIENT_ID: "a.apps.googleusercontent.com" }, "<none>")).status === 401 && (await put({ GOOGLE_CLIENT_ID: "a.apps.googleusercontent.com" }, "wrong-password")).status === 401);
+  ok("infrastructure secrets can't be set from the web", (await put({ DATABASE_URL: "postgresql://evil" })).status === 400 && (await put({ CONFIG_ENCRYPTION_KEY: "x".repeat(40) })).status === 400 && (await put({ SESSION_SECRET: "x" })).status === 400);
+  ok("malformed keys rejected (format checks)", (await put({ PAYMONGO_SECRET_KEY: "not-a-key" })).status === 400 && (await put({ APPLE_PRIVATE_KEY: "nope" })).status === 400 && (await put({ GOOGLE_CLIENT_ID: "a\nb" })).status === 400);
+  ok("social sign-in hidden while unconfigured", (await anon("/api/auth/providers")).json?.data?.google === false);
+  const saved = await put({ GOOGLE_CLIENT_ID: "e2e.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: SECRET });
+  ok("owner can save keys", saved.status === 200);
+  ok("saved secrets are never returned by the API", !saved.text.includes(SECRET) && !(await owner(IK)).text.includes(SECRET) && saved.json.data.groups.find((g) => g.id === "google").fields.find((f) => f.key === "GOOGLE_CLIENT_SECRET").source === "admin");
+  ok("a saved key takes effect without a restart", (await anon("/api/auth/providers")).json?.data?.google === true);
+  const row = await db.integrationSecret.findUnique({ where: { key: "GOOGLE_CLIENT_SECRET" } });
+  ok("stored encrypted at rest (AES-256-GCM), plaintext not in the database", !!row && row.value.startsWith("v1:") && !row.value.includes(SECRET));
+  await db.integrationSecret.upsert({ where: { key: "RESEND_API_KEY" }, create: { key: "RESEND_API_KEY", value: row.value }, update: { value: row.value } });
+  const moved = (await owner(IK)).json.data.groups.find((g) => g.id === "email").fields.find((f) => f.key === "RESEND_API_KEY");
+  ok("an encrypted value copied onto another key is rejected (key-bound)", moved.unreadable === true && moved.source !== "admin");
+  await db.integrationSecret.deleteMany({ where: { key: "RESEND_API_KEY" } });
+  const al = JSON.stringify(await db.auditLog.findMany({ where: { action: "integrations.update" }, orderBy: { createdAt: "desc" }, take: 3 }));
+  ok("changes are audited by key name, never by value", al.includes("GOOGLE_CLIENT_SECRET") && !al.includes(SECRET) && !JSON.stringify(await db.securityEvent.findMany({ where: { kind: "integrations.changed" } })).includes(SECRET));
+  ok("clearing falls back to the server file", (await put({ GOOGLE_CLIENT_ID: null, GOOGLE_CLIENT_SECRET: null })).status === 200 && (await anon("/api/auth/providers")).json?.data?.google === false);
+
   console.log("\nLogging hygiene");
   ok("audit/events never store passwords or tokens", await (async () => { const a = JSON.stringify(await db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 200 })) + JSON.stringify(await db.analyticsEvent.findMany({ orderBy: { createdAt: "desc" }, take: 300 })); return !a.includes("walkies123") && !a.includes("resetpass123") && !a.includes(tok); })());
 

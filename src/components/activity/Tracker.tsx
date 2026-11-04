@@ -65,6 +65,7 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
 
   useEffect(() => { api<RewardCfg>("/api/rewards/config").then(setCfg).catch(() => {}); const d = loadDraft(); if (d && !["completed", "setup"].includes(d.phase)) { setRestore(d); setPicker(false); } }, []);
   useEffect(() => { if (["active", "paused", "finishing", "failed"].includes(draft.phase)) saveDraft(draft); }, [draft]);
+  useEffect(() => { if (initialType) { setPicker(false); setDraft((d) => (d.phase === "setup" ? { ...d, type: initialType } : d)); } }, [initialType]);
   useEffect(() => { if (!running) return; const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, [running]);
   useEffect(() => {
     const onVis = () => {
@@ -150,9 +151,11 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
       setFailMsg(e.message); setDraft((d) => ({ ...d, phase: "failed" }));
     }
   }
+  /** Back from setup always lands on Home (the tracker is full-screen, so there's no tab bar to escape with). */
+  function goHome() { stopGeo.current(); release.current(); router.push("/app"); }
   function discard() { syncSession("abandon"); saveDraft(null); stopGeo.current(); release.current(); router.push("/app"); }
 
-  if (picker) return <main className="min-h-dvh px-4"><ActivityPicker open onClose={() => { setPicker(false); if (!initialType) router.push("/app"); }} /></main>;
+  if (picker) return <main className="min-h-dvh px-4"><ActivityPicker open onClose={() => router.push("/app")} onPick={(f) => { setPicker(false); router.replace(`/app/activity/track?family=${f}`); }} /></main>;
 
   if (restore) {
     return (
@@ -189,7 +192,7 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
   const estMin = draft.goal.kind === "DURATION" ? draft.goal.value ?? 30 : 30;
 
   return (
-    <Shell onBack={setupMode ? () => setPicker(true) : undefined} title={setupMode ? `Ready to ${fam.verb}?` : meta.label}>
+    <Shell onBack={setupMode ? goHome : undefined} title={setupMode ? `Ready to ${fam.verb}?` : meta.label}>
       {setupMode && (
         <>
           <div className="no-scrollbar -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1" role="radiogroup" aria-label="Activity type">

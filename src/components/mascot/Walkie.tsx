@@ -4,6 +4,7 @@
  */
 import type { CSSProperties } from "react";
 import { WearLayer, type AccessoryProp } from "./Accessories";
+import { Biped, FIGURE, HEAD_LIFT, TorsoWear } from "./Biped";
 import { FURS, LOOKS, slotOf, type FurKey, type LookKey } from "@/lib/wardrobe";
 
 export const MOODS = [
@@ -49,7 +50,7 @@ export function Walkie({ mood = "idle", size = 160, className = "", accessories 
       </g>
 
       {mood === "bike" && <Bike />}
-      <g className="wk-all" style={mood === "bike" ? { transform: "translateY(-16px)" } : undefined}>
+      <g transform={FIGURE}><g className="wk-all" style={mood === "bike" ? { transform: "translateY(-16px)" } : undefined}>
         <WearLayer items={items} layer="behind" />
         {/* tail */}
         <g className="wk-tail" style={{ transformOrigin: "138px 158px" }}>
@@ -60,43 +61,15 @@ export function Walkie({ mood = "idle", size = 160, className = "", accessories 
           <path d="M160 102 C166 106 170 112 171 118" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" opacity=".5" />
         </g>
 
-        <g className="wk-body">
-          {/* back paws */}
-          <ellipse cx="66" cy="180" rx="18" ry="9" fill={WHITE} />
-          <ellipse cx="134" cy="180" rx="18" ry="9" fill={WHITE} />
-          <ellipse cx="66" cy="180" rx="18" ry="9" fill="url(#wkg-shade)" />
-          <ellipse cx="134" cy="180" rx="18" ry="9" fill="url(#wkg-shade)" />
-          <WearLayer items={items} layer="backPaw" x={66} />
-          <WearLayer items={items} layer="backPaw" x={134} />
-          {/* body */}
-          <path d="M60 182 C52 150 68 118 100 116 C132 118 148 150 140 182 Z" fill={FUR} />
-          <path d="M60 182 C52 150 68 118 100 116 C132 118 148 150 140 182 Z" fill="url(#wkg-fur)" />
-          <path d="M60 182 C52 150 68 118 100 116 C132 118 148 150 140 182 Z" fill="url(#wkg-shade)" />
-          <path d="M64 150 C70 132 82 122 96 119" stroke={FUR_LIGHT} strokeWidth="6" strokeLinecap="round" fill="none" opacity=".6" />
-          <path d="M78 182 C76 156 87 134 100 134 C113 134 124 156 122 182 Z" fill={WHITE} />
-          {/* chest fluff */}
-          <path d="M86 140 l4 6 l3 -5 l4 6 l3 -6 l4 6 l3 -5 l4 5" stroke="#E4E9F0" strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round" />
-          <WearLayer items={items} layer="torso" />
-          {/* front legs */}
-          <g className="wk-paw-l">
-            <rect x="80" y="146" width="15" height="38" rx="7.5" fill={WHITE} />
-            <rect x="80" y="146" width="15" height="38" rx="7.5" fill="url(#wkg-shade)" />
-            <path d="M84 181 v-5 M88 181 v-5 M92 181 v-5" stroke="#D9E0E8" strokeWidth="1.6" strokeLinecap="round" />
-            <WearLayer items={items} layer="frontPaw" x={80} />
-          </g>
-          <g className="wk-paw-r">
-            <g className="wk-paw-r-raise" style={{ transformOrigin: "112px 148px", transition: "transform .3s" }}>
-              <rect x="105" y="146" width="15" height="38" rx="7.5" fill={WHITE} />
-              <rect x="105" y="146" width="15" height="38" rx="7.5" fill="url(#wkg-shade)" />
-              <path d="M109 181 v-5 M113 181 v-5 M117 181 v-5" stroke="#D9E0E8" strokeWidth="1.6" strokeLinecap="round" />
-              <WearLayer items={items} layer="frontPaw" x={105} />
-            </g>
-          </g>
-        </g>
-        <WearLayer items={items} layer="front" />
-        <WearLayer items={items} layer="neck" />
+        <Biped items={items} p={{
+          fur: FUR, furLight: FUR_LIGHT, belly: WHITE, leg: WHITE, arm: FUR, hand: WHITE, texture: true, toes: "#D9E0E8",
+          chest: <path d="M86 140 l4 6 l3 -5 l4 6 l3 -6 l4 6 l3 -5 l4 5" stroke="#E4E9F0" strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round" />,
+        }} />
+        <TorsoWear items={items} layer="front" />
+        <TorsoWear items={items} layer="neck" />
 
         {/* head */}
+        <g transform={HEAD_LIFT}>
         <g className="wk-head" style={{ transformOrigin: "100px 120px" }}>
           <g className="wk-ear-l" style={{ transformOrigin: "80px 62px" }}>
             <path d="M54 76 C52 56 58 38 66 28 C76 36 88 48 94 60 Z" fill={FUR} stroke={FUR} strokeWidth="6" strokeLinejoin="round" />
@@ -184,7 +157,8 @@ export function Walkie({ mood = "idle", size = 160, className = "", accessories 
           <WearLayer items={items} layer="face" />
           <WearLayer items={items} layer="head" />
         </g>
-      </g>
+        </g>
+      </g></g>
       {mood === "bike" && <BikeFront />}
 
       {/* ── effects ── */}

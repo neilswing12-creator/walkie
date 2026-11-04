@@ -4,6 +4,7 @@ set -euo pipefail
 APP_DIR=/var/www/walkie; BRANCH="${BRANCH:-main}"
 [ "$(id -u)" = 0 ] || { echo "Run as root (sudo)."; exit 1; }
 cd "$APP_DIR"
+grep -q "^CONFIG_ENCRYPTION_KEY=" .env || { echo "CONFIG_ENCRYPTION_KEY=\"$(openssl rand -base64 32)\"" >> .env; chown walkie:walkie .env; chmod 600 .env; }   # enables admin-managed keys
 sudo -u walkie git fetch -q origin "$BRANCH"
 sudo -u walkie git reset -q --hard "origin/$BRANCH"
 sudo -u walkie git clean -qfd prisma          # undo the previous Postgres switch before re-applying it

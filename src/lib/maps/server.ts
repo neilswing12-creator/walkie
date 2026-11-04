@@ -2,10 +2,11 @@ import "server-only";
 import { SignJWT, importPKCS8 } from "jose";
 import { db } from "../db";
 import { env } from "../env";
+import { cfg } from "../integrations/config";
 import { getSetting } from "../settings";
 import { CAPABILITIES, MAPS_DEFAULTS, OPEN_STYLE_DEFAULT, type MapPlatform, type MapsClientConfig, type MapsSettings, type ProviderStatus } from "./types";
 
-const k = (n: string) => { const v = process.env[n]; return v && v.trim() ? v.trim() : undefined; };
+const k = (n: string) => cfg(n)?.trim() || undefined; // admin-set (encrypted) value, else environment
 export const mapKeys = () => ({
   googleWeb: k("GOOGLE_MAPS_WEB_KEY"), googleIos: k("GOOGLE_MAPS_IOS_KEY"), googleAndroid: k("GOOGLE_MAPS_ANDROID_KEY"),
   appleTeam: k("APPLE_MAPKIT_TEAM_ID"), appleKeyId: k("APPLE_MAPKIT_KEY_ID"), applePrivateKey: k("APPLE_MAPKIT_PRIVATE_KEY")?.replace(/\\n/g, "\n"),

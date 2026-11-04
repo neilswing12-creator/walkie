@@ -1,4 +1,7 @@
 "use client";
+import { ModelThumb } from "./ModelThumb";
+import { ItemIcon } from "@/components/wardrobe/ItemIcon";
+import type { Slot } from "@/lib/wardrobe";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ShopState, Catalog } from "@/lib/queries/shop";
@@ -166,7 +169,7 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
                 {inventoryPlaceables.length === 0 && <button onClick={() => setMarket(true)} className="shrink-0 rounded-2xl bg-walkie-light px-4 py-3 text-[13px] font-bold text-walkie-slate">Inventory empty — visit the market →</button>}
                 {inventoryPlaceables.map((i) => (
                   <button key={i.itemId} onClick={() => startPlacing(i)} className="relative w-[84px] shrink-0 rounded-2xl bg-walkie-light p-2 text-center">
-                    <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl" style={{ background: i.color ?? "#ddd" }}><Icon name={i.category === "BUILDING" ? "home" : i.category === "FURNITURE" ? "store" : "sparkle"} size={20} className="text-white" /></span>
+                    <ModelThumb spec={i} size={48} className="mx-auto" fallback={<span className="grid h-11 w-11 place-items-center rounded-xl" style={{ background: i.color ?? "#ddd" }}><Icon name={i.category === "BUILDING" ? "home" : i.category === "FURNITURE" ? "store" : "sparkle"} size={20} className="text-white" /></span>} />
                     <span className="mt-1 block truncate text-[11px] font-bold">{i.name}</span>
                     <span className="absolute right-1.5 top-1.5 rounded-full bg-white px-1.5 text-[10px] font-extrabold shadow-card">×{i.quantity}</span>
                   </button>
@@ -192,7 +195,7 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
       {catalog && (
         <Sheet open={market} onClose={() => setMarket(false)} title="Market" wide>
           <div className="no-scrollbar -mx-5 mb-3 flex gap-2 overflow-x-auto px-5">
-            {MARKET_TABS.map((t) => <button key={t.key} onClick={() => setMTab(t.key)} className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-bold ${mTab === t.key ? "bg-walkie-ink text-white" : "bg-white shadow-card"}`}>{t.label}</button>)}
+            {MARKET_TABS.map((t) => <button key={t.key} onClick={() => setMTab(t.key)} aria-pressed={mTab === t.key} className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-bold ${mTab === t.key ? "bg-walkie-ink text-white" : "bg-white shadow-card"}`}>{t.label}</button>)}
           </div>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {catalog.items.filter((i) => MARKET_TABS.find((t) => t.key === mTab)!.cats.includes(i.category as ItemCategory)).map((i) => {
@@ -201,7 +204,12 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
               const afford = catalog.coins >= i.priceCoins;
               return (
                 <div key={i.id} className="flex flex-col rounded-3xl bg-white p-3 shadow-card">
-                  <div className="grid h-16 place-items-center rounded-2xl" style={{ background: `${i.color ?? "#EAF2FC"}55` }}><span className="h-9 w-9 rounded-xl shadow-inner" style={{ background: i.color ?? "#A9C5ED" }} /></div>
+                  <div className="relative grid h-24 place-items-center overflow-hidden rounded-2xl" style={{ background: `radial-gradient(120% 90% at 50% 20%, #ffffff 0%, ${i.color ?? "#EAF2FC"}40 70%, ${i.color ?? "#EAF2FC"}66 100%)` }}>
+                    <span className="absolute bottom-2 h-3 w-16 rounded-[50%] bg-[#1b2538]/10 blur-[3px]" aria-hidden />
+                    {i.category === "ACCESSORY" && i.slot
+                      ? <ItemIcon itemKey={i.key} color={i.color} slot={i.slot as Slot} size={72} className="relative drop-shadow-[0_5px_6px_rgba(27,37,56,.2)]" />
+                      : <ModelThumb spec={i} size={84} className="relative" fallback={<span className="h-9 w-9 rounded-xl shadow-inner" style={{ background: i.color ?? "#A9C5ED" }} />} />}
+                  </div>
                   <div className="mt-2 flex items-center gap-1"><p className="flex-1 truncate text-[14px] font-bold">{i.name}</p>{i.seasonal && <span title="Seasonal">❄️</span>}</div>
                   <p className="line-clamp-2 min-h-[32px] text-[11.5px] leading-tight text-walkie-muted">{i.description}</p>
                   <div className="mt-1.5 flex items-center justify-between"><RarityBadge rarity={i.rarity} />{i.owned > 0 && <span className="text-[11px] font-bold text-walkie-muted">Owned {i.owned}</span>}</div>

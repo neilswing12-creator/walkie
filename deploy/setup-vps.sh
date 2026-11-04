@@ -79,6 +79,7 @@ DATABASE_URL="postgresql://walkie:${DBPASS}@127.0.0.1:5432/walkie?schema=public"
 APP_URL="https://${DOMAIN}"
 CRON_SECRET="$(openssl rand -hex 32)"
 SIGNAL_SECRET="$(openssl rand -hex 32)"
+CONFIG_ENCRYPTION_KEY="$(openssl rand -base64 32)"
 UPLOAD_DIR="${DATA_DIR}/uploads"
 # Optional integrations — fill in when ready, then: sudo systemctl restart walkie
 PAYMONGO_SECRET_KEY=""
@@ -104,6 +105,7 @@ POSTHOG_HOST=""
 FCM_SERVICE_ACCOUNT_JSON=""
 ENVEOF
 fi
+grep -q "^CONFIG_ENCRYPTION_KEY=" "$ENV" || echo "CONFIG_ENCRYPTION_KEY=\"$(openssl rand -base64 32)\"" >> "$ENV"   # older installs
 chown walkie:walkie "$ENV" && chmod 600 "$ENV"
 chmod 750 "$APP_DIR"
 

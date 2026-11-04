@@ -1,4 +1,5 @@
 "use client";
+import { useProviders } from "@/lib/client/providers";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
@@ -18,13 +19,15 @@ const Err = ({ msg }: { msg: string | null }) => (msg ? <p role="alert" classNam
 const OAUTH_ERR: Record<string, string> = { oauth: "Sign-in didn't complete. Please try again.", oauth_state: "That sign-in link expired. Please try again.", oauth_unconfigured: "That sign-in option isn't set up yet.", oauth_unverified: "Please verify your email with that provider first.", account_unavailable: "This account isn't available." };
 
 function Social() {
+  const pv = useProviders();
+  if (!pv || (!pv.google && !pv.apple)) return null;
   return (
     <div className="grid gap-2">
-      <a href="/api/auth/oauth/apple" className="btn-dark w-full"><Icon name="apple" size={18} fill="currentColor" strokeWidth={0} /> Continue with Apple</a>
-      <a href="/api/auth/oauth/google" className="btn w-full border border-walkie-gray bg-white text-walkie-ink hover:bg-walkie-light">
+      {pv.apple && <a href="/api/auth/oauth/apple" className="btn-dark w-full"><Icon name="apple" size={18} fill="currentColor" strokeWidth={0} /> Continue with Apple</a>}
+      {pv.google && <a href="/api/auth/oauth/google" className="btn w-full border border-walkie-gray bg-white text-walkie-ink hover:bg-walkie-light">
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.9-3c-1 .7-2.4 1.2-4 1.2-3.1 0-5.7-2.1-6.6-4.9h-4v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.4 14.4a7.2 7.2 0 0 1 0-4.7V6.6h-4a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.3.6 4.5 1.8l3.4-3.4A12 12 0 0 0 1.4 6.6l4 3.1C6.3 6.9 8.9 4.8 12 4.8z"/></svg>
         Continue with Google
-      </a>
+      </a>}
       <div className="my-2 flex items-center gap-3 text-[12px] font-bold text-walkie-muted"><span className="h-px flex-1 bg-walkie-gray" />or with email<span className="h-px flex-1 bg-walkie-gray" /></div>
     </div>
   );

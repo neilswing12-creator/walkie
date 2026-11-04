@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { api } from "@/lib/client/api";
 import { useToast } from "../ui/Toast";
+import { IntegrationsEditor } from "./IntegrationsEditor";
 const TITLES: Record<string, string> = { branding: "App branding", economy: "Shop economy & rewards", maintenance: "Maintenance mode", notifications: "Notification limits", analytics: "Analytics", ads: "Ads", referrals: "Referrals & VIP trials", leaderboard: "Leaderboards: scoring, periods, rewards & resets", maps: "Maps & Location (use the dedicated page for a guided editor)" };
 export function SettingsEditor({ values, integrations }: { values: Record<string, Record<string, any>>; integrations: Record<string, boolean> }) {
   const toast = useToast();
@@ -10,7 +11,7 @@ export function SettingsEditor({ values, integrations }: { values: Record<string
   return (
     <div className="space-y-4">
       <h1 className="font-display text-3xl font-semibold">Settings</h1>
-      <div className="card p-5"><p className="font-display font-semibold">Integrations (from environment variables)</p><div className="mt-2 flex flex-wrap gap-1.5">{Object.entries(integrations).map(([k, on]) => <span key={k} className={`chip ${on ? "bg-mint text-emerald-800" : "bg-walkie-light text-walkie-muted"}`}>{on ? "●" : "○"} {k}</span>)}</div><p className="mt-2 text-[12px] text-walkie-muted">Secrets are never editable here — set them in your hosting provider. See docs/ENVIRONMENT.md.</p><a href="/admin/maps" className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-walkie-pale px-3 py-2 text-[13px] font-bold text-walkie-blue">Maps & Location — choose Google / Apple / open maps per platform →</a></div>
+      <IntegrationsEditor />
       {Object.entries(v).map(([key, obj]) => (
         <div key={key} className="card p-5">
           <p className="font-display text-lg font-semibold">{TITLES[key] ?? key}</p>

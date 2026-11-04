@@ -1,5 +1,12 @@
 # Environment variables
 
+**Integration keys can also be set in Admin → Settings → Integrations & API keys** (OWNER only, password re-entry). Keys saved there:
+- are encrypted with `CONFIG_ENCRYPTION_KEY`;
+- override the values below;
+- take effect within seconds, with no restart.
+
+Infrastructure values can only be set here, never from the web: `DATABASE_URL`, `APP_URL`, `SESSION_SECRET`, `CRON_SECRET`, `SIGNAL_SECRET` and `CONFIG_ENCRYPTION_KEY`.
+
 Every integration is optional. When credentials are missing, the related feature turns itself off and says so: buttons are disabled with an explanation, and the admin "Integrations" panel shows the status. Nothing is faked.
 
 | Variable | Required | Used for | Without it |
@@ -22,6 +29,7 @@ Every integration is optional. When credentials are missing, the related feature
 | `UPLOAD_DIR` | optional | Avatar and admin image uploads (use a persistent volume, or swap for object storage) | `./public/uploads` |
 | `CAP_SERVER_URL` | native builds | URL the Capacitor shell loads | — |
 | `CRON_SECRET` | prod | Bearer token for `POST /api/cron/referrals` and `POST /api/cron/leaderboard` | Cron endpoints return 401; leaderboards still settle lazily when someone opens them |
+| `CONFIG_ENCRYPTION_KEY` | to edit keys in admin | AES-256-GCM key for integration keys saved in the admin panel | Admin shows status only; keys come from this file |
 | `SIGNAL_SECRET` | prod | HMAC key for IP hashes and install tokens (referral anti-abuse) | Uses `CRON_SECRET`. Without either in production, a random per-process key is used, so hashes don't survive restarts |
 
 ## Credential-gated features (summary)

@@ -5,6 +5,7 @@
  * that glides between "hero" and "peek" positions (380 ms), thin progress bar + back + skip, primed permissions,
  * a tactile micro-game and a plan-building checklist. Progress persists in localStorage and resumes after OAuth.
  */
+import { useProviders } from "@/lib/client/providers";
 import Link from "next/link";
 import { LOOKS, WARDROBE_BY_KEY, type LookKey } from "@/lib/wardrobe";
 import { useRouter } from "next/navigation";
@@ -270,6 +271,7 @@ function Account({ answers, onDone }: { answers: Answers; onDone: () => void }) 
   const [email, setEmail] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const pv = useProviders();
   const prepOauth = () => persist({ step: "finish", a: answers });
   return (
     <div className="flex flex-1 flex-col pt-[calc(15dvh+250px)] text-center">
@@ -277,8 +279,8 @@ function Account({ answers, onDone }: { answers: Answers; onDone: () => void }) 
       <p className="mx-auto mt-1 max-w-xs text-[15px] text-walkie-muted">So {answers.petName} and your progress follow you on every device.</p>
       {!email ? (
         <div className="mt-auto grid gap-2 pt-6">
-          <a href="/api/auth/oauth/apple" onClick={prepOauth} className="btn-dark h-14"><Icon name="apple" size={18} fill="currentColor" strokeWidth={0} /> Continue with Apple</a>
-          <a href="/api/auth/oauth/google" onClick={prepOauth} className="btn h-14 border border-walkie-gray bg-white text-walkie-ink">Continue with Google</a>
+          {pv?.apple && <a href="/api/auth/oauth/apple" onClick={prepOauth} className="btn-dark h-14"><Icon name="apple" size={18} fill="currentColor" strokeWidth={0} /> Continue with Apple</a>}
+          {pv?.google && <a href="/api/auth/oauth/google" onClick={prepOauth} className="btn h-14 border border-walkie-gray bg-white text-walkie-ink">Continue with Google</a>}
           <button className="btn-soft h-14" onClick={() => setEmail(true)}><Icon name="mail" size={18} />Sign up with email</button>
           <Link href="/login?next=/welcome" onClick={prepOauth} className="mt-1 text-[13px] font-bold text-walkie-blue">I already have an account</Link>
         </div>

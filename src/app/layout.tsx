@@ -5,6 +5,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 import { CelebrateProvider } from "@/components/ui/Celebrate";
 import { WalkieDefs } from "@/components/mascot/WalkieDefs";
+import { ScrollAssist } from "@/components/ui/ScrollAssist";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://walkie.run"),
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="min-h-dvh">
         <WalkieDefs />
+        <ScrollAssist />
         <ToastProvider>
           <CelebrateProvider>{children}</CelebrateProvider>
         </ToastProvider>

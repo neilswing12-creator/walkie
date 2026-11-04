@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type ZodTypeAny, type output } from "zod";
 import { getCurrentUser, getSessionContext, staffSessionStale, hasRole, type CurrentUser } from "./auth/session";
 import { rateLimit } from "./rate-limit";
+import { refreshConfig } from "./integrations/config";
 import { env } from "./env";
 import type { Role } from "./constants";
 
@@ -40,6 +41,7 @@ function wrap<P>(fn: (ctx: any) => Promise<Response>, opts: Options & { public?:
   return async (req: NextRequest, ctx: { params: Promise<P> }) => {
     try {
       if (!originAllowed(req)) return fail(403, "Cross-site request blocked", "csrf");
+      await refreshConfig(); // no-op unless the admin-set integration keys are >30 s old
       const ip = clientIp(req);
       const user = await getCurrentUser();
       if (!opts.public) {

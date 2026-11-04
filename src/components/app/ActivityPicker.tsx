@@ -13,9 +13,9 @@ const CARDS = [
 ] as const;
 
 /** "What's your adventure today?" — family choice; sub-type, goal & GPS are set on the next screen. */
-export function ActivityPicker({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ActivityPicker({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick?: (family: string) => void }) {
   const router = useRouter();
-  const go = (f: string) => { onClose(); router.push(`/app/activity/track?family=${f}`); };
+  const go = (f: string) => { if (onPick) return onPick(f); onClose(); router.push(`/app/activity/track?family=${f}`); };
   return (
     <Sheet open={open} onClose={onClose} title="What's your adventure today?">
       <div className="grid gap-2.5">
