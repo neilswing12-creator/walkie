@@ -1,4 +1,5 @@
 "use client";
+import { SoundSettings } from "./SoundSettings";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ReactNode } from "react";
@@ -93,6 +94,10 @@ export function ProfileClient({ user, profile: initial, plus, stats, petSpecies,
         <Toggle k="shareRoutes" label="Share route maps with friends" sub="Off by default. Precise routes are never public." />
         <Toggle k="leaderboardOptIn" label="Appear on public leaderboards" sub="Weekly totals only, never locations" />
         <Toggle k="allowFriendRequests" label="Allow friend requests" />
+      </Group>
+
+      <Group title="Sounds">
+        <SoundSettings />
       </Group>
 
       <Group title="Notifications">

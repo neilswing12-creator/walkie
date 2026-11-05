@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import { ModelThumb } from "./ModelThumb";
 import { ItemIcon } from "@/components/wardrobe/ItemIcon";
 import type { Slot } from "@/lib/wardrobe";
@@ -65,20 +66,21 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
 
   function startPlacing(it: { itemId: string; model: string | null; color: string | null; w: number; d: number; name: string }, buy?: { price: number }) {
     setSelected(null); setMoving(null); setMarket(false); setBuild(true);
+    sfx("open");
     setPlacing({ itemId: it.itemId, model: it.model ?? "bush", color: it.color ?? "#9ccf9c", w: it.w, d: it.d, rotation: 0, name: it.name, buy, ...center() });
   }
   async function confirm() {
     if (!active || !valid) return;
     await run(async () => {
       if (placing) {
-        if (placing.buy) await api("/api/shop/buy", { body: { itemId: placing.itemId, quantity: 1, requestId: uid() } });
+        if (placing.buy) { await api("/api/shop/buy", { body: { itemId: placing.itemId, quantity: 1, requestId: uid() } }); sfx("buy"); }
         const r = await api<{ id: string }>("/api/shop/place", { body: { itemId: placing.itemId, x: placing.x, z: placing.z, rotation: placing.rotation } });
         setUndo((u) => [...u.slice(-19), { kind: "place", id: r.id }]);
-        toast("success", `${placing.name} placed`);
+        sfx("place"); toast("success", `${placing.name} placed`);
         setPlacing(null);
       } else if (moving) {
         await api(`/api/shop/place/${moving.id}`, { method: "PATCH", body: { x: moving.x, z: moving.z, rotation: moving.rotation } });
-        setUndo((u) => [...u.slice(-19), { kind: "move", id: moving.id, ...moving.from }]);
+        setUndo((u) => [...u.slice(-19), { kind: "move", id: moving.id, ...moving.from }]); sfx("place");
         setMoving(null);
       }
       await reload();
@@ -86,14 +88,14 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
   }
   async function storeSelected() {
     const p = state.placements.find((x) => x.id === selected); if (!p) return;
-    await run(async () => { await api(`/api/shop/place/${p.id}`, { method: "DELETE" }); setUndo((u) => [...u.slice(-19), { kind: "remove", itemId: p.itemId, x: p.x, z: p.z, rotation: p.rotation }]); setSelected(null); await reload(); });
+    await run(async () => { await api(`/api/shop/place/${p.id}`, { method: "DELETE" }); sfx("store"); setUndo((u) => [...u.slice(-19), { kind: "remove", itemId: p.itemId, x: p.x, z: p.z, rotation: p.rotation }]); setSelected(null); await reload(); });
   }
   async function rotateSelected() {
     const p = state.placements.find((x) => x.id === selected); if (!p) return;
     const rot = (p.rotation + 1) % 4;
     const v = validatePlacement({ id: p.id, x: p.x, z: p.z, rotation: rot, w: p.w, d: p.d }, others, state.layout.expansion);
     if (!v.ok) return toast("error", v.reason);
-    await run(async () => { await api(`/api/shop/place/${p.id}`, { method: "PATCH", body: { x: p.x, z: p.z, rotation: rot } }); setUndo((u) => [...u.slice(-19), { kind: "move", id: p.id, x: p.x, z: p.z, rotation: p.rotation }]); await reload(); });
+    await run(async () => { await api(`/api/shop/place/${p.id}`, { method: "PATCH", body: { x: p.x, z: p.z, rotation: rot } }); sfx("rotate"); setUndo((u) => [...u.slice(-19), { kind: "move", id: p.id, x: p.x, z: p.z, rotation: p.rotation }]); await reload(); });
   }
   async function doUndo() {
     const last = undo[undo.length - 1]; if (!last) return;
@@ -101,7 +103,7 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
       if (last.kind === "place") await api(`/api/shop/place/${last.id}`, { method: "DELETE" });
       else if (last.kind === "move") await api(`/api/shop/place/${last.id}`, { method: "PATCH", body: { x: last.x, z: last.z, rotation: last.rotation } });
       else await api("/api/shop/place", { body: { itemId: last.itemId, x: last.x, z: last.z, rotation: last.rotation } });
-      setUndo((u) => u.slice(0, -1)); setSelected(null); await reload();
+      setUndo((u) => u.slice(0, -1)); setSelected(null); sfx("undo"); await reload();
     });
   }
   function onTap(h: { x: number; z: number; placementId: string | null; pet: boolean }) {
@@ -215,7 +217,7 @@ export function ShopClient({ initial, catalog: initialCatalog, readOnly, ownerNa
                   <div className="mt-1.5 flex items-center justify-between"><RarityBadge rarity={i.rarity} />{i.owned > 0 && <span className="text-[11px] font-bold text-walkie-muted">Owned {i.owned}</span>}</div>
                   {i.locked ? <Link href="/app/plus" className="btn-soft mt-2 min-h-[36px] text-[13px]">Plus</Link> : single && i.owned > 0 ? <span className="mt-2 text-center text-[12px] font-bold text-emerald-600">Owned ✓</span> : (
                     <div className="mt-2 grid gap-1.5">
-                      <button className="btn-primary min-h-[36px] px-2 text-[13px]" disabled={!afford || busy} onClick={() => run(async () => { await api("/api/shop/buy", { body: { itemId: i.id, quantity: 1, requestId: uid() } }); toast("success", `Bought ${i.name}`); await reload(); })}><Coin size={15} />{num(i.priceCoins)}</button>
+                      <button className="btn-primary min-h-[36px] px-2 text-[13px]" disabled={!afford || busy} onClick={() => run(async () => { await api("/api/shop/buy", { body: { itemId: i.id, quantity: 1, requestId: uid() } }); sfx("buy"); toast("success", `Bought ${i.name}`); await reload(); })}><Coin size={15} />{num(i.priceCoins)}</button>
                       {placeable && <button className="text-[12px] font-bold text-walkie-blue disabled:opacity-40" disabled={!afford} onClick={() => startPlacing({ itemId: i.id, model: i.model, color: i.color, w: i.w, d: i.d, name: i.name }, { price: i.priceCoins })}>Preview in shop</button>}
                     </div>
                   )}

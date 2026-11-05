@@ -7,6 +7,7 @@
  *  · the selected tab/chip (aria-selected / aria-checked / aria-current) is scrolled into view
  * One document-level listener set — no per-component wiring.
  */
+import { initSfx } from "@/lib/client/sfx";
 import { useEffect } from "react";
 
 const ROW = ".no-scrollbar";
@@ -22,6 +23,7 @@ function mark(r: HTMLElement) {
 const markAll = () => document.querySelectorAll<HTMLElement>(ROW).forEach(mark);
 
 export function ScrollAssist() {
+  useEffect(() => { initSfx(); }, []);
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // pinch-zoom or a real horizontal gesture

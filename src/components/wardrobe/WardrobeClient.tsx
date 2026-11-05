@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, uid } from "@/lib/client/api";
@@ -61,12 +62,13 @@ export function WardrobeClient() {
   };
   const tapItem = (it: Item) => {
     lookAt(it.slot);
-    if (!it.owned) { setPreview(preview?.key === it.key ? null : it); react(preview?.key === it.key ? "unequip" : "equip"); return; }
+    if (!it.owned) { sfx(preview?.key === it.key ? "unequip" : "tryon"); setPreview(preview?.key === it.key ? null : it); react(preview?.key === it.key ? "unequip" : "equip"); return; }
     setPreview(null);
     const wearing = d.equipped[it.slot] === it.key;
     const prev = d.equipped;
     setD({ ...d, equipped: { ...d.equipped, [it.slot]: wearing ? undefined : it.key } });
     react(wearing ? "unequip" : ["EPIC", "LEGENDARY", "MYTHICAL"].includes(it.rarity) ? "rare" : "equip");
+    sfx(wearing ? "unequip" : ["EPIC", "LEGENDARY", "MYTHICAL"].includes(it.rarity) ? "discover" : "equip");
     save({ [it.slot]: wearing ? null : it.key }, prev);
   };
   const buy = async (it: Item) => {
@@ -77,7 +79,7 @@ export function WardrobeClient() {
       setD({ ...d, coins: r.coins, items: d.items.map((x) => (x.id === it.id ? { ...x, owned: true } : x)), equipped: { ...d.equipped, [it.slot]: it.key } });
       setPreview(null);
       react(["RARE", "EPIC", "LEGENDARY", "MYTHICAL"].includes(it.rarity) ? "rare" : "reward");
-      toast("success", `${it.name} is yours!`);
+      sfx("buy"); toast("success", `${it.name} is yours!`);
       await save({ [it.slot]: it.key }, prev);
     } catch (e: any) { toast("error", e.message); } finally { setBusy(false); }
   };
@@ -125,7 +127,7 @@ export function WardrobeClient() {
           <div className="flex flex-col gap-6 pt-2">{RIGHT.map((s) => <SlotTile key={s} slot={s} />)}</div>
         </div>
         <div className="relative mt-3 flex justify-center gap-2 px-4">
-          {[["rotate", "Twirl", () => react("twirl")], ["undo", "Reset", () => appearance({ reset: true })], ["heart", "Save", () => { setLookName(""); setSheet("save"); }], ["user", "Style", () => setTab("ME")]].map(([ic, l, f]) => (
+          {[["rotate", "Twirl", () => { sfx("tryon"); react("twirl"); }], ["undo", "Reset", () => appearance({ reset: true })], ["heart", "Save", () => { setLookName(""); setSheet("save"); }], ["user", "Style", () => setTab("ME")]].map(([ic, l, f]) => (
             <button key={l as string} onClick={f as () => void} className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/90 px-3.5 py-2 text-[12px] font-bold text-walkie-slate shadow-card backdrop-blur active:scale-95"><Icon name={ic as string} size={15} />{l as string}</button>
           ))}
         </div>

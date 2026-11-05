@@ -9,6 +9,7 @@
  *    from the reference analysis), rare-item celebrations, rewards, etc.
  * Pauses when off-screen or the tab is hidden (battery), and drops to expression-only changes under prefers-reduced-motion.
  */
+import { sfx } from "@/lib/client/sfx";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Walkie, type Expression, type Mood } from "./Walkie";
 import type { AccessoryProp } from "./Accessories";
@@ -132,16 +133,16 @@ export function LivingWalkie({ mood = "idle", size = 180, accessories = [], look
 
   const down = () => {
     if (!interactive) return;
-    hold.current = window.setTimeout(() => { hold.current = null; play([{ t: 0, act: "pet", expr: "squint", mood: "interact" }, { t: 60000, act: null }]); }, 450);
+    hold.current = window.setTimeout(() => { hold.current = null; sfx("pet"); play([{ t: 0, act: "pet", expr: "squint", mood: "interact" }, { t: 60000, act: null }]); }, 450);
   };
   const up = () => {
     if (!interactive) return;
     if (hold.current === null) { play([{ t: 0, act: null, expr: "smile", mood: null }, { t: 500, expr: null }]); return; } // end of petting
     clearTimeout(hold.current); hold.current = null;
     const now = Date.now(); taps.current = [...taps.current.filter((t) => now - t < 1200), now];
-    if (taps.current.length >= 4) { taps.current = []; play([{ t: 0, mood: "jump", expr: "squint" }, { t: 1100, mood: "celebrate", expr: null }, { t: 2300, mood: null }]); }
-    else if (taps.current.length >= 2) play([{ t: 0, act: "hop", expr: "squint", mood: "interact" }, { t: 650, act: "wiggle" }, { t: 1350, act: null, expr: null, mood: null }]);
-    else play([{ t: 0, expr: "ooh", act: "hop" }, { t: 450, expr: "squint", act: null, mood: "happy" }, { t: 1300, expr: null, mood: null }]);
+    if (taps.current.length >= 4) { taps.current = []; sfx("cheer"); play([{ t: 0, mood: "jump", expr: "squint" }, { t: 1100, mood: "celebrate", expr: null }, { t: 2300, mood: null }]); }
+    else if (taps.current.length >= 2) { sfx("giggle"); play([{ t: 0, act: "hop", expr: "squint", mood: "interact" }, { t: 650, act: "wiggle" }, { t: 1350, act: null, expr: null, mood: null }]); }
+    else { sfx("tap"); play([{ t: 0, expr: "ooh", act: "hop" }, { t: 450, expr: "squint", act: null, mood: "happy" }, { t: 1300, expr: null, mood: null }]); }
     onTap?.();
   };
 

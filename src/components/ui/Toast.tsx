@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 
@@ -9,6 +10,7 @@ export const useToast = () => useContext(Ctx);
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const push = useCallback((kind: Toast["kind"], text: string) => {
+    if (kind === "error") sfx("error");
     const id = Date.now() + Math.random();
     setToasts((t) => [...t.slice(-2), { id, kind, text }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3800);

@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
@@ -102,7 +103,7 @@ function Inner() {
     const text = `I'm #${d.me.rank} on Walkie's ${PERIODS.find((p) => p[0] === period)?.[1].toLowerCase()} ${BOARDS.find((b) => b[0] === board)?.[1].toLowerCase()} leaderboard 🐾 Come walk with me!`;
     if (navigator.share) { try { await navigator.share({ title: "My Walkie rank", text, url: `${location.origin}/` }); } catch {} } else { try { await navigator.clipboard.writeText(text); toast("success", "Copied — paste it anywhere!"); } catch {} }
   };
-  const cheer = async (r: Row) => { try { await api("/api/leaderboard/cheer", { body: { userId: r.userId } }); toast("success", `You cheered on ${r.name}! 📣`); } catch (e: any) { toast("info", e.message); } };
+  const cheer = async (r: Row) => { try { await api("/api/leaderboard/cheer", { body: { userId: r.userId } }); sfx("cheer"); toast("success", `You cheered on ${r.name}! 📣`); } catch (e: any) { toast("info", e.message); } };
 
   return (
     <div className="pb-32">

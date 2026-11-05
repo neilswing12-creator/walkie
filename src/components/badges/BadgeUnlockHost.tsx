@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import { usePathname, useRouter } from "next/navigation";
 import { MyWalkie } from "../mascot/MyWalkie";
 import { useCallback, useEffect, useState } from "react";
@@ -28,6 +29,7 @@ export function BadgeUnlockHost() {
   useEffect(() => { load(); }, [path, load]);
   useEffect(() => { const h = () => setTimeout(load, 600); window.addEventListener("walkie:check-badges", h); return () => window.removeEventListener("walkie:check-badges", h); }, [load]);
   const cur = queue[0];
+  useEffect(() => { if (cur && !tracking) sfx("badge"); }, [cur?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!cur) return; setStage(0); const t1 = setTimeout(() => setStage(1), 450), t2 = setTimeout(() => setStage(2), 1150); return () => { clearTimeout(t1); clearTimeout(t2); }; }, [cur]);
   if (!cur || tracking) return null;
   const rm = RARITY_META[cur.rarity as Rarity] ?? RARITY_META.COMMON;

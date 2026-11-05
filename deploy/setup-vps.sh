@@ -121,6 +121,7 @@ log "systemd service"
 install -m 644 "$APP_DIR/deploy/walkie.service" /etc/systemd/system/walkie.service
 systemctl daemon-reload
 systemctl enable walkie >/dev/null
+rm -rf "$APP_DIR/.next/server/route-cache" "$APP_DIR/.next/cache/fetch-cache"   # stale pages from a previous build
 systemctl restart walkie
 for i in $(seq 1 30); do curl -fs -o /dev/null "http://127.0.0.1:${PORT}/" && break; sleep 1; done
 curl -fs -o /dev/null "http://127.0.0.1:${PORT}/" && echo "app is up on 127.0.0.1:${PORT}" || { journalctl -u walkie -n 40 --no-pager; exit 1; }

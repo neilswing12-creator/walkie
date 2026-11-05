@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import Link from "next/link";
 import { AppIcon, type AppIconName } from "../ui/AppIcon";
 import { Scene, useTod } from "./Scene";
@@ -53,7 +54,7 @@ export function HomeClient({ data }: { data: HomeData; onboarded?: boolean }) {
     setBusy(id);
     try {
       const r = await api<{ coins: number; xp: number; leveledUp: boolean; level: number; discoveredPets: { key: string; name: string }[] }>(`/api/missions/${id}/claim`, { method: "POST" });
-      toast("success", `${title} · +${r.coins} coins`);
+      toast("success", `${title} · +${r.coins} coins`); sfx("coins");
       if (r.discoveredPets?.[0]) celebrate({ title: `You found a ${r.discoveredPets[0].name}!`, species: r.discoveredPets[0].key, body: "Say hi in your collection." });
       else if (r.leveledUp) celebrate({ title: `Level ${r.level}!`, mood: "levelup" });
       refresh();

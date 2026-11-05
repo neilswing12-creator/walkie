@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import Link from "next/link";
 import { MyWalkie } from "../mascot/MyWalkie";
 import { AppIcon } from "../ui/AppIcon";
@@ -34,6 +35,7 @@ export function PetDetailClient({ d }: { d: D }) {
     try {
       const r = await api<{ pet: { happiness: number; energy: number; level?: number }; xp: number; leveledUp?: boolean; evolved?: boolean; note?: string }>(`/api/pets/${d.pet.id}/action`, { body: { action, itemId } });
       setStats({ happiness: r.pet.happiness, energy: r.pet.energy });
+      sfx(action === "feed" ? "feed" : action === "play" ? "play" : "pet");
       flash(action === "feed" ? "eat" : action === "play" ? "play" : "interact");
       if (r.evolved) setTimeout(() => celebrate({ title: `${d.pet.nickname} grew up!`, species: d.species.key, body: "A new growth stage — look at them go!" }), 1500);
       else if (r.leveledUp) setTimeout(() => celebrate({ title: `${d.pet.nickname} reached level ${r.pet.level}!`, species: d.species.key }), 1500);

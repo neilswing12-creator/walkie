@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MyWalkie } from "../mascot/MyWalkie";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -105,7 +106,7 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
   const gpsLost = running && meta.gps && geo.status === "ok" && geo.lastFix != null && now - geo.lastFix > 20000;
   const rate = cfg?.types.find((t) => t.key === draft.type)?.rate ?? meta.rate;
   const goalProgress = draft.goal.kind === "DISTANCE" ? distanceM / ((draft.goal.value ?? 1) * 1000) : draft.goal.kind === "DURATION" ? movingSec / ((draft.goal.value ?? 1) * 60) : draft.goal.kind === "CALORIES" ? kcal / (draft.goal.value ?? 1) : 0;
-  useEffect(() => { if (running && draft.goal.kind !== "FREE" && goalProgress >= 1 && !goalHit) { setGoalHit(true); navigator.vibrate?.([80, 60, 80]); } }, [goalProgress, running, draft.goal.kind, goalHit]);
+  useEffect(() => { if (running && draft.goal.kind !== "FREE" && goalProgress >= 1 && !goalHit) { setGoalHit(true); sfx("goal"); navigator.vibrate?.([80, 60, 80]); } }, [goalProgress, running, draft.goal.kind, goalHit]);
 
   async function start() {
     setDraft((d) => ({ ...d, phase: "starting" }));
@@ -113,15 +114,16 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
     release.current = await keepAwake();
     let sessionId: string | null = null;
     api<{ id: string }>("/api/activities/sessions", { body: { type: draft.type, goal: draft.goal } }).then((s) => { sessionId = s.id; setDraft((d) => ({ ...d, sessionId: s.id })); }).catch(() => toast("info", "Offline — your activity will be verified when it's saved"));
-    for (const n of [3, 2, 1]) { setCount(n); await new Promise((r) => setTimeout(r, 800)); }
+    for (const n of [3, 2, 1]) { setCount(n); sfx("count"); await new Promise((r) => setTimeout(r, 800)); }
+    sfx("go");
     const t = Date.now();
     setNow(t);
     setDraft((d) => ({ ...d, sessionId: d.sessionId ?? sessionId, startedAt: t, resumedAt: t, phase: "active" }));
     api("/api/analytics", { body: { name: "start_activity_tapped", props: { type: draft.type } } }).catch(() => {});
   }
   const syncSession = (action: "pause" | "resume" | "abandon") => { if (draft.sessionId) api(`/api/activities/sessions/${draft.sessionId}`, { method: "PATCH", body: { action } }).catch(() => {}); };
-  const pause = () => { syncSession("pause"); setDraft((d) => ({ ...d, movingMs: d.movingMs + (d.resumedAt ? Date.now() - d.resumedAt : 0), resumedAt: null, phase: "paused" })); };
-  const resume = () => { syncSession("resume"); const t = Date.now(); setNow(t); setDraft((d) => ({ ...d, resumedAt: t, phase: "active" })); };
+  const pause = () => { sfx("pause"); syncSession("pause"); setDraft((d) => ({ ...d, movingMs: d.movingMs + (d.resumedAt ? Date.now() - d.resumedAt : 0), resumedAt: null, phase: "paused" })); };
+  const resume = () => { sfx("resume"); syncSession("resume"); const t = Date.now(); setNow(t); setDraft((d) => ({ ...d, resumedAt: t, phase: "active" })); };
   const finish = () => { if (running) pause(); setDraft((d) => ({ ...d, phase: "finishing" })); };
 
   async function save() {
@@ -139,7 +141,7 @@ export function Tracker({ units, weightKg, userName, petName }: { units: "metric
         route: route?.points.map((p) => [p[0], p[1]] as [number, number]) ?? [], userName, units, petName, fresh: true,
         petHappiness: r.petHappiness, petXp: r.pet ? Math.round(a.xpAwarded * 0.8) : 0, missions: r.missions, shop: r.shop, streak: r.streak?.current, bonus: r.reward,
       });
-      setDraft((d) => ({ ...d, phase: "completed" }));
+      setDraft((d) => ({ ...d, phase: "completed" })); sfx("finish");
       window.scrollTo(0, 0);
       setTimeout(() => {
         if (r.discoveredPets?.[0]) celebrate({ title: `You discovered a ${r.discoveredPets[0].name}!`, species: r.discoveredPets[0].key, body: "Your adventures attracted a new friend." });

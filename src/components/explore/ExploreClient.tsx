@@ -1,4 +1,5 @@
 "use client";
+import { sfx, type Sfx } from "@/lib/client/sfx";
 import Link from "next/link";
 import { AppIcon } from "../ui/AppIcon";
 import { useRouter } from "next/navigation";
@@ -30,7 +31,7 @@ export function ExploreClient({ collection, missions, challenges, achievements, 
   const [, start] = useTransition();
   useEffect(() => { if (location.hash === "#missions") setTab("Missions"); }, []);
   const owned = collection.pets.filter((p) => p.owned).length;
-  const act = async (key: string, fn: () => Promise<void>) => { setBusy(key); try { await fn(); start(() => router.refresh()); } catch (e: any) { toast("error", e.message); } finally { setBusy(null); } };
+  const act = async (key: string, fn: () => Promise<void>, sound: Sfx | null = "coins") => { setBusy(key); try { await fn(); if (sound) sfx(sound); start(() => router.refresh()); } catch (e: any) { toast("error", e.message); } finally { setBusy(null); } };
 
   return (
     <div className="px-4 pt-[calc(14px+var(--safe-top))]">
@@ -99,7 +100,7 @@ export function ExploreClient({ collection, missions, challenges, achievements, 
                 {c.joined && <div className="mt-3 flex items-center gap-2"><Bar value={c.progress / c.target} /><span className="shrink-0 text-[12px] font-bold text-walkie-muted tabular">{fmtMission(c.kind, c.progress)}/{fmtMission(c.kind, c.target)}</span></div>}
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-[12px] font-semibold text-walkie-muted">{num(c.participants)} joined</span>
-                  {c.locked ? <span className="chip bg-lavender text-violet-700">Plus</span> : !c.joined ? <button className="btn-primary min-h-[38px] text-sm" disabled={busy === c.id} onClick={() => act(c.id, async () => { await api(`/api/challenges/${c.id}/join`, { method: "POST" }); toast("success", "You're in! Activities from now on count."); })}>Join</button>
+                  {c.locked ? <span className="chip bg-lavender text-violet-700">Plus</span> : !c.joined ? <button className="btn-primary min-h-[38px] text-sm" disabled={busy === c.id} onClick={() => act(c.id, async () => { await api(`/api/challenges/${c.id}/join`, { method: "POST" }); toast("success", "You're in! Activities from now on count."); }, "success")}>Join</button>
                     : c.completed && !c.claimed ? <button className="btn-primary min-h-[38px] text-sm" onClick={() => act(c.id, async () => { const r = await api<{ coins: number; xp: number }>(`/api/challenges/${c.id}/claim`, { method: "POST" }); celebrate({ title: "Challenge complete!", coins: r.coins, xp: r.xp }); })}>Claim</button>
                     : <span className="text-[13px] font-bold text-emerald-600">{c.claimed ? "Claimed ✓" : "Joined"}</span>}
                 </div>
@@ -140,7 +141,7 @@ export function ExploreClient({ collection, missions, challenges, achievements, 
                 <p className="text-[13px] font-bold text-walkie-slate"><Icon name="lock" size={14} className="mr-1 inline" />{sel.hint}</p>
                 {sel.progress != null && <Bar value={sel.progress} className="mt-2" />}
                 {sel.unlockType === "PURCHASE" && (
-                  <button className="btn-primary mt-3 w-full" disabled={busy === sel.key || (sel.premium && !collection.plus) || coins < (sel.priceCoins ?? 0)} onClick={() => act(sel.key, async () => { await api("/api/pets/adopt", { body: { speciesId: sel.speciesId } }); setSel(null); celebrate({ title: `Welcome, ${sel.name}!`, species: sel.key, body: "Your new friend joined the pet shop." }); })}>
+                  <button className="btn-primary mt-3 w-full" disabled={busy === sel.key || (sel.premium && !collection.plus) || coins < (sel.priceCoins ?? 0)} onClick={() => act(sel.key, async () => { await api("/api/pets/adopt", { body: { speciesId: sel.speciesId } }); setSel(null); celebrate({ title: `Welcome, ${sel.name}!`, species: sel.key, body: "Your new friend joined the pet shop." }); }, null)}>
                     <Coin size={18} />{sel.priceCoins?.toLocaleString()} · Adopt
                   </button>
                 )}

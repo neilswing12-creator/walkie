@@ -1,4 +1,5 @@
 "use client";
+import { sfx } from "@/lib/client/sfx";
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { MyWalkie } from "../mascot/MyWalkie";
 import { Walkie, type Mood } from "../mascot/Walkie";
@@ -12,7 +13,10 @@ export const useCelebrate = () => useContext(Ctx);
 /** Full-screen reward moment: level ups, new pets, claimed rewards. */
 export function CelebrateProvider({ children }: { children: ReactNode }) {
   const [c, setC] = useState<C | null>(null);
-  const show = useCallback((x: C) => setC(x), []);
+  const show = useCallback((x: C) => {
+    setC(x);
+    sfx(x.coins ? "claim" : x.species && x.species !== "husky" ? (/grew up/i.test(x.title) ? "evolve" : "reward") : x.mood === "levelup" ? "levelup" : x.mood === "discover" ? "discover" : "reward");
+  }, []);
   return (
     <Ctx.Provider value={show}>
       {children}
