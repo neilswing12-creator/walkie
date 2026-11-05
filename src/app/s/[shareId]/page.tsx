@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { privacyTrim } from "@/lib/route-privacy";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -6,7 +7,6 @@ import { ACTIVITY_META, FAMILY_META, type ActivityType } from "@/lib/constants";
 import { formatDuration, formatPace, formatSpeed } from "@/lib/fitness";
 import { Walkie } from "@/components/mascot/Walkie";
 import { RouteSvg } from "@/components/activity/RouteSvg";
-import { haversine } from "@/lib/fitness";
 
 export const dynamic = "force-dynamic";
 async function load(shareId: string) {
@@ -26,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ shareId: stri
   const o = (a.shareOptions as { route?: boolean; name?: boolean; details?: boolean }) ?? {};
   const meta = ACTIVITY_META[a.type as ActivityType], fam = FAMILY_META[meta.family];
   let pts = ((a.route?.points as [number, number][]) ?? []).map((p) => [p[0], p[1]] as [number, number]);
-  if (o.route && pts.length > 3) { const s = pts[0], e = pts[pts.length - 1]; pts = pts.filter((p) => haversine(p[0], p[1], s[0], s[1]) > 150 && haversine(p[0], p[1], e[0], e[1]) > 150); } else pts = [];
+  pts = o.route ? privacyTrim(pts) : [];
   return (
     <main className="min-h-dvh bg-gradient-to-b from-walkie-pale to-walkie-white px-4 py-10">
       <div className="card mx-auto max-w-md overflow-hidden">

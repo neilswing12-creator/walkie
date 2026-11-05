@@ -1,4 +1,5 @@
 "use client";
+import { privacyTrim } from "@/lib/route-privacy";
 import { useEffect, useRef, useState } from "react";
 import { injectDefs } from "../mascot/WalkieDefs";
 import { ACTIVITY_META, FAMILY_META, type ActivityType } from "@/lib/constants";
@@ -26,7 +27,7 @@ async function svgToImage(el: SVGSVGElement, size: number): Promise<HTMLImageEle
 
 function rr(c: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) { c.beginPath(); c.roundRect(x, y, w, h, r); }
 
-/** Draws the share card. Privacy: route only if opted in and trimmed 150 m at each end so home/work isn't revealed. */
+/** Draws the share card. Privacy: start & finish of the route are trimmed (route-privacy.ts) so home/work isn't revealed. */
 export async function renderShareCard(canvas: HTMLCanvasElement, d: CompletionData, o: Opts, mascot: SVGSVGElement) {
   const W = 1080, H = o.format === "story" ? 1920 : 1080;
   canvas.width = W; canvas.height = H;
@@ -65,12 +66,10 @@ export async function renderShareCard(canvas: HTMLCanvasElement, d: CompletionDa
   });
   const statsBottom = top + 120 + Math.ceil(stats.length / 2) * 150;
   let drewRoute = false;
-  if (o.route && d.route.length > 3) {
-    // trim privacy zone: drop points within ~150 m of start and finish
-    const trim = (pts: [number, number][]) => { const near = (p: [number, number], q: [number, number]) => Math.hypot((p[0] - q[0]) * 111195, (p[1] - q[1]) * 111195 * Math.cos((p[0] * Math.PI) / 180)) < 150; const s = pts[0], e = pts[pts.length - 1]; return pts.filter((p) => !near(p, s) && !near(p, e)); };
-    const pts = trim(d.route);
+  if (o.route && d.route.length >= 3) {
+    const pts = privacyTrim(d.route); // start & finish hidden (150 m, or 20 % of a short route)
     const boxY = statsBottom, boxH = H - 48 - 60 - boxY;
-    if (pts.length > 2 && boxH > 160) {
+    if (pts.length >= 2 && boxH > 160) {
       rr(c, 96, boxY, W - 192, boxH, 40); c.fillStyle = "#EAF2FC"; c.fill();
       const lats = pts.map((p) => p[0]), lngs = pts.map((p) => p[1]);
       const k = Math.cos(((Math.min(...lats) + Math.max(...lats)) / 2) * Math.PI / 180);
@@ -99,7 +98,7 @@ export async function renderShareCard(canvas: HTMLCanvasElement, d: CompletionDa
 
 export function ShareSheet({ open, onClose, d }: { open: boolean; onClose: () => void; d: CompletionData }) {
   const toast = useToast();
-  const [o, setO] = useState<Opts>({ route: false, name: true, details: true, format: "story" });
+  const [o, setO] = useState<Opts>({ route: d.route.length >= 3, name: true, details: true, format: "story" });
   const [preview, setPreview] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const mascot = useRef<HTMLDivElement>(null);
@@ -145,7 +144,7 @@ export function ShareSheet({ open, onClose, d }: { open: boolean; onClose: () =>
         <div>
           <div className="grid grid-cols-2 gap-1 rounded-full bg-white p-1 shadow-card">{(["story", "square"] as const).map((f) => <button key={f} onClick={() => setO({ ...o, format: f })} className={`rounded-full py-2 text-[13px] font-extrabold ${o.format === f ? "bg-walkie-blue text-white" : "text-walkie-muted"}`}>{f === "story" ? "Story 9:16" : "Square 1:1"}</button>)}</div>
           <div className="mt-2 divide-y divide-walkie-light rounded-2xl bg-white px-4 shadow-card">
-            <T k="route" label="Show route" sub="Off by default · start/finish 150 m hidden" />
+            <T k="route" label="Show route" sub="Start & finish hidden for privacy" />
             <T k="name" label="Show my name" sub={d.userName} />
             <T k="details" label="Show pace / speed" sub="Distance & time always shown" />
           </div>
