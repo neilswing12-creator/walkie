@@ -1,0 +1,57 @@
+/* Walkie.run — 4-pubmat campaign. Shared art direction: one stage, one type system, one footer. 1080×1080. */
+@font-face { font-family: "Fredoka"; src: url("parts/fonts/fredoka-latin-wght-normal.woff2") format("woff2"); font-weight: 300 700; }
+@font-face { font-family: "Nunito"; src: url("parts/fonts/nunito-latin-wght-normal.woff2") format("woff2"); font-weight: 200 1000; }
+:root { --blue: #6B8FD6; --slate: #425A7C; --soft: #A9C5ED; --pale: #EAF2FC; --gray: #D9E0E8; --white: #FAFAF7; --ink: #242B35;
+  --gold: #F2B84B; --pink: #F28DAA; --mint: #5DBE9A; --lav: #A08BE0; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1080px; overflow: hidden; background: #fff; }
+body { font-family: "Nunito", sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+.pm { position: relative; width: 1080px; height: 1080px; overflow: hidden; isolation: isolate; }
+/* stage: layered light, soft bokeh, ground */
+.bg { position: absolute; inset: 0; z-index: -3; }
+.p-glow { position: absolute; border-radius: 50%; filter: blur(60px); z-index: -2; }
+.p-bokeh { position: absolute; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,.15) 60%, rgba(255,255,255,0) 70%); z-index: -1; }
+.p-grain { position: absolute; inset: 0; z-index: 50; pointer-events: none; opacity: .05; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* brand */
+.p-brand { position: absolute; top: 52px; left: 60px; display: flex; align-items: center; gap: 14px; z-index: 20; }
+.p-brand img { width: 62px; height: 62px; border-radius: 17px; box-shadow: 0 10px 24px -10px rgba(37,52,80,.55); }
+.p-brand b { font: 600 34px/1 "Fredoka"; letter-spacing: -.3px; color: var(--ink); }
+.p-brand b i { font-style: normal; color: var(--blue); }
+.p-step { position: absolute; top: 62px; right: 60px; font: 800 15px/1 "Nunito"; letter-spacing: 2.4px; color: var(--slate); opacity: .55; z-index: 20; }
+/* type */
+.p-kicker { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 99px; background: rgba(255,255,255,.75); backdrop-filter: blur(8px);
+  font: 800 15px/1 "Nunito"; letter-spacing: 2px; text-transform: uppercase; color: var(--blue); box-shadow: 0 6px 16px -10px rgba(37,52,80,.5); }
+h1 { font: 600 74px/0.98 "Fredoka"; letter-spacing: -1.6px; color: var(--ink); }
+h1 em { font-style: normal; background: linear-gradient(100deg, #4F74C9, #7FA6EA); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.p-lead { font: 600 23px/1.38 "Nunito"; color: #4A5568; }
+/* chips & CTA */
+.p-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.p-chip { display: inline-flex; align-items: center; gap: 9px; padding: 9px 16px 9px 10px; border-radius: 99px; background: #fff; font: 800 17px/1 "Nunito"; color: var(--slate);
+  box-shadow: 0 10px 24px -14px rgba(37,52,80,.55), inset 0 0 0 1px rgba(66,90,124,.06); }
+.p-chip .ic { width: 30px; height: 30px; }
+.p-chip .ic svg { width: 30px; height: 30px; }
+.p-foot { position: absolute; left: 60px; right: 60px; bottom: 50px; display: flex; align-items: center; justify-content: space-between; z-index: 20; }
+.cta { display: inline-flex; align-items: center; gap: 12px; padding: 22px 34px; border-radius: 99px; font: 700 26px/1 "Fredoka"; color: #fff;
+  background: linear-gradient(180deg, #7C9FE3, #5A7ECF); box-shadow: 0 18px 34px -16px rgba(64,98,180,.9), inset 0 2px 0 rgba(255,255,255,.35), inset 0 -3px 0 rgba(0,0,0,.08); }
+.cta svg { width: 22px; height: 22px; }
+.p-meta { text-align: right; font: 800 16px/1.35 "Nunito"; color: var(--slate); }
+.p-meta small { display: block; font: 700 14px/1.3 "Nunito"; color: #7A889E; letter-spacing: .2px; }
+/* cards (same language as the app's UI) */
+.p-card { position: absolute; background: rgba(255,255,255,.92); backdrop-filter: blur(12px); border-radius: 30px; z-index: 10;
+  box-shadow: 0 28px 50px -26px rgba(37,52,80,.55), 0 2px 6px rgba(37,52,80,.06), inset 0 0 0 1px rgba(255,255,255,.7); }
+.p-label { font: 800 13px/1 "Nunito"; letter-spacing: 1.6px; text-transform: uppercase; color: #8592A6; }
+.p-num { font: 600 40px/1 "Fredoka"; color: var(--ink); letter-spacing: -.5px; }
+.p-sample { position: absolute; z-index: 21; font: 800 12px/1 "Nunito"; letter-spacing: 1.4px; text-transform: uppercase; color: #8592A6; background: rgba(255,255,255,.85); padding: 6px 10px; border-radius: 99px; }
+/* characters */
+.p-char { position: absolute; z-index: 5; }
+.p-char svg.wk { width: 100%; height: auto; display: block; overflow: visible; }
+.shadow-soft { filter: drop-shadow(0 24px 22px rgba(37,52,80,.22)); }
+/* freeze the app's character animations on an expressive frame */
+.wk, .wk * { animation-play-state: paused !important; }
+.f1 .wk * { animation-delay: -0.22s !important; } .f2 .wk * { animation-delay: -0.1s !important; } .f3 .wk * { animation-delay: -0.4s !important; }
+.f0 .wk * { animation: none !important; }
+.p-spark { position: absolute; z-index: 12; }
+
+[data-part] > svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.p-char > svg.wk, .p-char [data-part] > svg.wk { height: auto; }

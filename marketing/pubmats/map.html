@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- Sample Manila route for pubmat 4, snapped to real OpenStreetMap street geometry (OpenFreeMap tiles). -->
+<link rel="stylesheet" href="/node_modules/maplibre-gl/dist/maplibre-gl.css">
+<style>html,body{margin:0;background:#EAF2FC}#m{width:1200px;height:900px}
+.pin{width:30px;height:30px;border-radius:50%;border:6px solid #fff;box-shadow:0 4px 12px rgba(27,37,56,.35)}</style></head><body><div id="m"></div>
+<script type="module">
+import * as maplibre from "/node_modules/maplibre-gl/dist/maplibre-gl.mjs";
+maplibre.setWorkerUrl?.("/public/vendor/maplibre/maplibre-gl-worker.mjs");
+const map = new maplibre.Map({ container: "m", style: "https://tiles.openfreemap.org/styles/liberty", center: [120.9775, 14.5862], zoom: 15.25, attributionControl: false, preserveDrawingBuffer: true, interactive: false });
+const R = 6371000, rad = Math.PI / 180;
+const xy = (p, o) => [(p[0] - o[0]) * rad * R * Math.cos(o[1] * rad), (p[1] - o[1]) * rad * R]; // [lng,lat] → metres
+const dist = (a, b) => { const [x, y] = xy(a, b); return Math.hypot(x, y); };
+let roads = null;
+function seg(name, from, to, corridor = 40) {
+  const pts = (roads[name] ?? []).flat();
+  const [vx, vy] = xy(to, from), L2 = vx * vx + vy * vy;
+  let inside = pts.map((p) => { const [px, py] = xy(p, from); const t = (px * vx + py * vy) / L2; const d = (px * vy - py * vx) / Math.sqrt(L2); return { p, t, d }; })
+    .filter((q) => q.t > 0 && q.t < 1 && Math.abs(q.d) < corridor).sort((a, b) => a.t - b.t);
+  // divided roads have two carriageways: keep the one closest to the median offset so the line doesn't zig-zag
+  if (inside.length > 2) { const md = [...inside.map((q) => q.d)].sort((a, b) => a - b)[Math.floor(inside.length / 2)]; inside = inside.filter((q) => Math.abs(q.d - md) < 7); }
+  const out = [from]; for (const q of inside) if (dist(q.p, out[out.length - 1]) > 4) out.push(q.p); out.push(to); return out;
+}
+const snap = (name, ll) => { const pts = (roads[name] ?? []).flat(); return pts.reduce((b, p) => (dist(p, ll) < dist(b, ll) ? p : b), pts[0]); };
+map.on("load", () => setTimeout(() => {
+  const src = Object.keys(map.getStyle().sources).find((k) => map.getStyle().sources[k].type === "vector");
+  roads = {}; for (const f of map.querySourceFeatures(src, { sourceLayer: "transportation_name" })) { if (!f.properties?.name || !/Line/.test(f.geometry.type)) continue; const cs = f.geometry.type === "LineString" ? [f.geometry.coordinates] : f.geometry.coordinates; (roads[f.properties.name] ??= []).push(...cs); }
+  // waypoints [lng, lat], each snapped onto the named street
+  const W = {
+    start: snap("Roxas Boulevard", [120.9776, 14.5806]),
+    roxasN: snap("Roxas Boulevard", [120.9755, 14.5829]),
+    anda: snap("Bonifacio Drive", [120.9712, 14.5903]),
+    sorianoA: snap("Andres Soriano Avenue", [120.9712, 14.5910]),
+    sorianoB: snap("Andres Soriano Avenue", [120.9724, 14.5921]),
+    lunaN: snap("General Luna Street", [120.9725, 14.5921]),
+    lunaS: snap("General Luna Street", [120.9798, 14.5847]),
+    burgosW: snap("Padre Burgos Avenue", [120.9780, 14.5859]),
+    burgos: snap("Padre Burgos Avenue", [120.9797, 14.5856]),
+    orosaN: snap("Maria Orosa Street", [120.9800, 14.5850]),
+    orosaS: snap("Maria Orosa Street", [120.9809, 14.5818]),
+    kalawE: snap("Kalaw Avenue", [120.9808, 14.5817]),
+    kalawW: snap("Kalaw Avenue", [120.9776, 14.5806]),
+  };
+  const route = [
+    ...seg("Roxas Boulevard", W.start, W.roxasN), ...seg("Bonifacio Drive", W.roxasN, W.anda),
+    ...seg("Andres Soriano Avenue", W.sorianoA, W.sorianoB), ...seg("General Luna Street", W.lunaN, W.lunaS),
+    ...seg("Maria Orosa Street", W.orosaN, W.orosaS), ...seg("Kalaw Avenue", W.kalawE, W.kalawW),
+  ];
+  let m = 0; for (let i = 1; i < route.length; i++) m += dist(route[i - 1], route[i]);
+  window.__len = m; window.__route = route;
+  map.addSource("r", { type: "geojson", data: { type: "Feature", geometry: { type: "LineString", coordinates: route } } });
+  map.addLayer({ id: "glow", type: "line", source: "r", paint: { "line-color": "#6B8FD6", "line-width": 26, "line-opacity": 0.22, "line-blur": 8 }, layout: { "line-cap": "round", "line-join": "round" } });
+  map.addLayer({ id: "case", type: "line", source: "r", paint: { "line-color": "#fff", "line-width": 15 }, layout: { "line-cap": "round", "line-join": "round" } });
+  map.addLayer({ id: "line", type: "line", source: "r", paint: { "line-color": "#4F74C9", "line-width": 9 }, layout: { "line-cap": "round", "line-join": "round" } });
+  const pin = (ll, c) => { const d = document.createElement("div"); d.className = "pin"; d.style.background = c; new maplibre.Marker({ element: d }).setLngLat(ll).addTo(map); };
+  pin(route[0], "#5DBE9A"); pin(route[route.length - 1], "#242B35");
+  map.once("idle", () => { window.__done = true; });
+}, 600));
+</script></body></html>
