@@ -2,6 +2,7 @@
 <!-- Sample Manila route for pubmat 4, snapped to real OpenStreetMap street geometry (OpenFreeMap tiles). -->
 <link rel="stylesheet" href="/node_modules/maplibre-gl/dist/maplibre-gl.css">
 <style>html,body{margin:0;background:#EAF2FC}#m{width:1200px;height:900px}
+.lm{font:700 21px/1.1 "Nunito",system-ui,sans-serif;letter-spacing:.3px;color:#3F6E46;text-shadow:0 0 3px #fff,0 0 6px #fff,0 0 10px #fff;white-space:nowrap;pointer-events:none}.lm.w{color:#3A78B5;font-style:italic;letter-spacing:2px}.lm.d{color:#5A6478;letter-spacing:2.5px;font-size:17px;text-transform:uppercase}
 .pin{width:30px;height:30px;border-radius:50%;border:6px solid #fff;box-shadow:0 4px 12px rgba(27,37,56,.35)}</style></head><body><div id="m"></div>
 <script type="module">
 import * as maplibre from "/node_modules/maplibre-gl/dist/maplibre-gl.mjs";
@@ -10,6 +11,29 @@ const map = new maplibre.Map({ container: "m", style: "https://tiles.openfreemap
 const R = 6371000, rad = Math.PI / 180;
 const xy = (p, o) => [(p[0] - o[0]) * rad * R * Math.cos(o[1] * rad), (p[1] - o[1]) * rad * R]; // [lng,lat] → metres
 const dist = (a, b) => { const [x, y] = xy(a, b); return Math.hypot(x, y); };
+
+// ── clean, calm basemap restyle (same OpenStreetMap data, softer palette, less clutter) ──
+function restyle() {
+  const set = (id, prop, v) => { if (map.getLayer(id)) { try { map.setPaintProperty(id, prop, v); } catch {} } };
+  const hide = (id) => map.getLayer(id) && map.setLayoutProperty(id, "visibility", "none");
+  set("background", "background-color", "#F6F4EF");
+  for (const id of ["park", "landcover_grass", "landcover_wood", "landuse_pitch", "landuse_cemetery"]) { set(id, "fill-color", "#CFEBC6"); set(id, "fill-opacity", 1); }
+  for (const id of ["landuse_residential", "landuse_hospital", "landuse_school", "landcover_sand"]) set(id, "fill-color", "#F1EEE8");
+  set("water", "fill-color", "#A9D6F5");
+  for (const id of ["waterway_river", "waterway_other", "waterway_tunnel"]) set(id, "line-color", "#A9D6F5");
+  set("building", "fill-color", "#E9E6DF"); set("building", "fill-outline-color", "#E1DDD5");
+  for (const l of map.getStyle().layers) {
+    const id = l.id;
+    if (/casing/.test(id)) set(id, "line-color", "#E3DED4");
+    else if (/^(road|bridge|tunnel)_(motorway|trunk_primary)/.test(id)) set(id, "line-color", "#FFF2CF");
+    else if (/^(road|bridge|tunnel)_/.test(id) && l.type === "line") set(id, "line-color", "#FFFFFF");
+    if (/rail/.test(id)) set(id, "line-color", "#DAD6CE");
+    if (/^(poi_|highway-shield|road_shield|road_one_way|building-3d|park_outline|aeroway|boundary|road_area_pattern)/.test(id)) hide(id);
+    if (l.type === "symbol") { set(id, "text-color", "#5F6B7C"); set(id, "text-halo-color", "rgba(255,255,255,.92)"); set(id, "text-halo-width", 1.6); }
+  }
+  hide("label_other"); hide("water_name_point_label"); // replaced by the landmark labels below
+  for (const id of ["water_name_point_label", "water_name_line_label", "waterway_line_label"]) set(id, "text-color", "#4E86B8");
+}
 let roads = null;
 function seg(name, from, to, corridor = 40) {
   const pts = (roads[name] ?? []).flat();
@@ -21,7 +45,7 @@ function seg(name, from, to, corridor = 40) {
   const out = [from]; for (const q of inside) if (dist(q.p, out[out.length - 1]) > 4) out.push(q.p); out.push(to); return out;
 }
 const snap = (name, ll) => { const pts = (roads[name] ?? []).flat(); return pts.reduce((b, p) => (dist(p, ll) < dist(b, ll) ? p : b), pts[0]); };
-map.on("load", () => setTimeout(() => {
+map.on("load", () => { restyle(); }); map.on("load", () => setTimeout(() => {
   const src = Object.keys(map.getStyle().sources).find((k) => map.getStyle().sources[k].type === "vector");
   roads = {}; for (const f of map.querySourceFeatures(src, { sourceLayer: "transportation_name" })) { if (!f.properties?.name || !/Line/.test(f.geometry.type)) continue; const cs = f.geometry.type === "LineString" ? [f.geometry.coordinates] : f.geometry.coordinates; (roads[f.properties.name] ??= []).push(...cs); }
   // waypoints [lng, lat], each snapped onto the named street
@@ -53,6 +77,8 @@ map.on("load", () => setTimeout(() => {
   map.addLayer({ id: "line", type: "line", source: "r", paint: { "line-color": "#4F74C9", "line-width": 9 }, layout: { "line-cap": "round", "line-join": "round" } });
   const pin = (ll, c) => { const d = document.createElement("div"); d.className = "pin"; d.style.background = c; new maplibre.Marker({ element: d }).setLngLat(ll).addTo(map); };
   pin(route[0], "#5DBE9A"); pin(route[route.length - 1], "#242B35");
+  const lm = (txt, ll, cls) => { const d = document.createElement("div"); d.className = "lm " + cls; d.textContent = txt; new maplibre.Marker({ element: d }).setLngLat(ll).addTo(map); };
+  lm("Rizal Park", [120.9790, 14.5822], ""); lm("Intramuros", [120.9748, 14.5893], "d"); lm("Manila Bay", [120.9712, 14.5793], "w");
   map.once("idle", () => { window.__done = true; });
 }, 600));
 </script></body></html>

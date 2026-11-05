@@ -25,7 +25,7 @@ Each pubmat gets its own accent so the set isn't monotonously blue:
 
 **The mascot is the real thing.** Every character is rendered straight from the app's components (`src/components/mascot/*`): the same SVG rig, fur, blue eyes, proportions and wardrobe art users see in the app. Each is frozen on an expressive animation frame (waving, running, cheering). The pet shop in #2 is rendered by the app's own isometric engine (`src/components/shop/world.ts`).
 
-**Real map, plausible route (#4).** The map is real OpenStreetMap data via OpenFreeMap. The sample route is snapped to actual street geometry:
+**Real map, plausible route (#4).** The map is real OpenStreetMap data via OpenFreeMap, restyled in a clean, calm palette (pale-blue water, soft parks, white streets, no business clutter, landmark labels).* The sample route is snapped to actual street geometry:
 1. Start at Rizal Park, then Roxas Boulevard → Bonifacio Drive → Anda Circle.
 2. Andres Soriano Avenue → General Luna Street through Intramuros.
 3. Maria Orosa Street → Kalaw Avenue, finishing back at the park.
